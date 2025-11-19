@@ -26,11 +26,15 @@ export const TTDDialogOutput = ({
     <div className="ttd-dialog-output-wrapper">
       {error && <ErrorComp error={error.message} />}
       {loaded ? (
-        <div
-          ref={canvasRef}
-          style={{ opacity: error ? "0.15" : 1 }}
-          className="ttd-dialog-output-canvas-container"
-        />
+        <div className="ttd-dialog-output-canvas-container">
+          <div
+            ref={canvasRef}
+            style={{
+              opacity: error ? "0.15" : 1,
+            }}
+            className="ttd-dialog-output-canvas-content"
+          />
+        </div>
       ) : (
         <Spinner size="2rem" />
       )}

@@ -1,5 +1,6 @@
 import { DEFAULT_EXPORT_PADDING, EDITOR_LS_KEYS } from "@excalidraw/common";
 
+import { validateMermaid } from "@excalidraw/mermaid-to-excalidraw";
 import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
 import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidraw/dist/interfaces";
 
@@ -52,7 +53,16 @@ interface ConvertMermaidToExcalidrawFormatProps {
     elements: readonly NonDeletedExcalidrawElement[];
     files: BinaryFiles | null;
   }>;
+  signal?: AbortSignal;
 }
+
+export const justValidateMermaid = async (mermaidDefinition: string) => {
+  try {
+    return validateMermaid(mermaidDefinition);
+  } catch (err) {
+    return validateMermaid(mermaidDefinition.replace(/"/g, "'"));
+  }
+};
 
 export const convertMermaidToExcalidraw = async ({
   canvasRef,
@@ -60,6 +70,7 @@ export const convertMermaidToExcalidraw = async ({
   mermaidDefinition,
   setError,
   data,
+  signal,
 }: ConvertMermaidToExcalidrawFormatProps) => {
   const canvasNode = canvasRef.current;
   const parent = canvasNode?.parentElement;
@@ -73,17 +84,44 @@ export const convertMermaidToExcalidraw = async ({
     return;
   }
 
+  // Check if already aborted
+  if (signal?.aborted) {
+    return;
+  }
+
+  let ret;
   try {
+    const isValid = await validateMermaid(mermaidDefinition);
+
+    if (signal?.aborted) {
+      return;
+    }
+
+    if (!isValid) {
+      return;
+    }
+
     const api = await mermaidToExcalidrawLib.api;
 
-    let ret;
     try {
       ret = await api.parseMermaidToExcalidraw(mermaidDefinition);
     } catch (err: any) {
+      if (signal?.aborted) {
+        return;
+      }
       ret = await api.parseMermaidToExcalidraw(
         mermaidDefinition.replace(/"/g, "'"),
       );
     }
+
+    if (signal?.aborted) {
+      return;
+    }
+
+    if (!ret) {
+      return;
+    }
+
     const { elements, files } = ret;
     setError(null);
 
@@ -94,6 +132,10 @@ export const convertMermaidToExcalidraw = async ({
       files,
     };
 
+    if (signal?.aborted) {
+      return;
+    }
+
     const canvas = await exportToCanvas({
       elements: data.current.elements,
       files: data.current.files,
@@ -102,19 +144,31 @@ export const convertMermaidToExcalidraw = async ({
         Math.max(parent.offsetWidth, parent.offsetHeight) *
         window.devicePixelRatio,
     });
+
+    if (signal?.aborted) {
+      return;
+    }
     // if converting to blob fails, there's some problem that will
     // likely prevent preview and export (e.g. canvas too big)
     try {
-      await canvasToBlob(canvas);
+      // await canvasToBlob(canvas);
     } catch (e: any) {
       if (e.name === "CANVAS_POSSIBLY_TOO_BIG") {
         throw new Error(t("canvasError.canvasTooBig"));
       }
       throw e;
     }
+    if (signal?.aborted) {
+      return;
+    }
+
     parent.style.background = "var(--default-bg-color)";
     canvasNode.replaceChildren(canvas);
   } catch (err: any) {
+    // Don't throw if aborted - it's expected
+    if (signal?.aborted) {
+      return;
+    }
     parent.style.background = "var(--default-bg-color)";
     if (mermaidDefinition) {
       setError(err);

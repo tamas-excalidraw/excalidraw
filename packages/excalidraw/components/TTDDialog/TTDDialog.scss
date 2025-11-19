@@ -1,4 +1,6 @@
 @import "../../css/variables.module.scss";
+@import "../SpeechRecognition/SpeechRecognition.scss";
+@import "../Chat/Chat.scss";
 
 $verticalBreakpoint: 861px;
 
@@ -41,6 +43,26 @@ $verticalBreakpoint: 861px;
     margin-bottom: 1.5rem;
   }
 
+  .ttd-dialog-info {
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--color-on-surface-variant);
+    background: transparent;
+    cursor: help;
+
+    border: none;
+    border-radius: var(--border-radius-sm);
+
+    &:hover {
+      background: var(--color-surface-low);
+      color: var(--color-on-surface);
+    }
+  }
+
   .ttd-dialog-tabs-root {
     width: 100%;
     height: 100%;
@@ -76,9 +98,81 @@ $verticalBreakpoint: 861px;
     height: 100%;
     display: flex;
     flex-direction: column;
+    overflow: visible;
 
     &[hidden] {
       display: none;
+    }
+  }
+
+  .ttd-dialog-panel__header .dropdown-menu {
+    margin: 0;
+    right: 0;
+    left: auto;
+    min-width: 10rem;
+    
+    .dropdown-menu-container {
+    padding: 0.5rem 0;
+    max-height: 400px;
+    overflow-y: auto;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25), 
+                  0 4px 8px rgba(0, 0, 0, 0.15),
+                  0 0 1px rgba(0, 0, 0, 0.1) !important;
+      
+      @at-root .excalidraw.theme--dark & {
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6), 
+                    0 4px 12px rgba(0, 0, 0, 0.4),
+                    0 0 1px rgba(0, 0, 0, 0.5) !important;
+      }
+    }
+  }
+
+  .ttd-dialog-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    height: 100%;
+    transition: all 0.6s ease-out;
+    overflow: visible;
+
+    &--chat-only {
+      grid-template-columns: 1fr;
+    }
+
+    &--split {
+      gap: 2rem;
+      min-width: 0; // Allow flex items to shrink
+
+      @media screen and (max-width: $verticalBreakpoint) {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto;
+        grid-row-gap: 2rem;
+      }
+
+      .ttd-dialog-chat-panel {
+        min-width: 0;
+        transition: all 0.6s ease-out;
+
+        @media screen and (max-width: $verticalBreakpoint) {
+          width: 100%;
+          flex: 0 0 auto;
+          height: auto;
+        }
+      }
+
+      .ttd-dialog-preview-panel {
+        min-width: 0;
+        opacity: 1;
+        transform: translateX(0);
+        transition: all 0.6s ease-out;
+        overflow: hidden;
+
+        @media screen and (max-width: $verticalBreakpoint) {
+          width: 100%;
+          flex: 0 0 auto;
+          max-width: 100%;
+          height: 300px;
+        }
+      }
     }
   }
 
@@ -99,14 +193,18 @@ $verticalBreakpoint: 861px;
     }
   }
 
+
   .ttd-dialog-output-wrapper {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 0.85rem;
     box-sizing: border-box;
     flex-grow: 1;
     position: relative;
+    overflow: hidden;
+    max-width: 100%;
+    max-height: 100%;
 
     background: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVQ4T2NkYGAQYcAP3uCTZhw1gGGYhAGBZIA/nYDCgBDAm9BGDWAAJyRCgLaBCAAgXwixzAS0pgAAAABJRU5ErkJggg==")
       left center;
@@ -115,16 +213,78 @@ $verticalBreakpoint: 861px;
 
     height: 400px;
     width: auto;
+    max-width: 100%;
 
     @media screen and (min-width: $verticalBreakpoint) {
       width: 100%;
+      max-width: 100%;
       // acts as min-height
       height: 200px;
+      max-height: 500px;
     }
 
     canvas {
       max-width: 100%;
       max-height: 100%;
+      width: auto;
+      height: auto;
+      object-fit: contain;
+    }
+  }
+
+  .ttd-dialog-output-controls {
+    position: absolute;
+    top: 0.5rem;
+    right: 0.5rem;
+    display: flex;
+    gap: 0.25rem;
+    z-index: 10;
+    background: var(--color-surface-lowest);
+    border-radius: var(--border-radius-sm);
+    padding: 0.25rem;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border: 1px solid var(--dialog-border-color);
+  }
+
+  .ttd-dialog-zoom-button {
+    &.ToolIcon {
+      width: 28px;
+      height: 28px;
+      min-width: 28px;
+      min-height: 28px;
+      padding: 0;
+      border-radius: var(--border-radius-sm);
+      background: transparent;
+      color: var(--color-on-surface);
+      transition: all 0.2s ease;
+
+      &:hover:not(:disabled) {
+        background: var(--color-surface-low);
+      }
+
+      &:active:not(:disabled) {
+        background: var(--color-surface-high);
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+
+      .ToolIcon__icon {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        font-size: 0.75rem;
+        font-weight: 500;
+
+        svg {
+          width: 14px;
+          height: 14px;
+        }
+      }
     }
   }
 
@@ -135,6 +295,29 @@ $verticalBreakpoint: 861px;
     align-items: center;
     justify-content: center;
     flex-grow: 1;
+    position: relative;
+    user-select: none;
+  }
+
+  .ttd-dialog-output-canvas-content {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+    flex-grow: 1;
+    image-rendering: auto;
+    image-rendering: smooth;
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    will-change: transform;
+
+    canvas {
+      image-rendering: auto;
+      image-rendering: smooth;
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+    }
   }
 
   .ttd-dialog-output-error {
@@ -168,6 +351,16 @@ $verticalBreakpoint: 861px;
       grid-template-columns: 1fr 1fr;
       gap: 4rem;
     }
+  }
+
+  .ttd-dialog-chat-panel,
+  .ttd-dialog-preview-panel {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    overflow: hidden;
   }
 
   .ttd-dialog-panel {
@@ -310,6 +503,83 @@ $verticalBreakpoint: 861px;
       border: 1px solid gray;
       padding: 2px 3px;
       border-radius: 4px;
+    }
+  }
+
+  .ttd-dialog-menu-trigger {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-on-surface);
+    border-radius: var(--border-radius-sm);
+    transition: background-color 0.2s ease;
+    position: relative;
+
+    &:hover:not(:disabled) {
+      background-color: var(--color-surface-low);
+    }
+
+    &:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  .dropdown-menu-item-custom.ttd-chat-menu-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 0.5rem 0.75rem;
+    cursor: pointer;
+    position: relative;
+    margin-top: 0;
+
+    &:hover {
+      background-color: var(--button-hover-bg);
+    }
+
+    &__title {
+      flex: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .ttd-chat-menu-item__delete {
+      background: none;
+      border: none;
+      padding: 0.25rem;
+      cursor: pointer;
+      transition: opacity 0.2s ease, visibility 0.2s ease;
+      flex-shrink: 0;
+      margin-left: 0.5rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      svg {
+        width: 16px;
+        height: 16px;
+        fill: var(--color-danger);
+      }
+
+      &:hover {
+        opacity: 1 !important;
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
     }
   }
 }
