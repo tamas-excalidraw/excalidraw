@@ -105,7 +105,9 @@ export const AIComponents = ({
           const { onChunk, ...requestPayload } = payload;
 
           const result = await streamFetch({
-            url: "/api/ai/text-to-diagram/chat-streaming",
+            url: `${
+              import.meta.env.VITE_APP_AI_BACKEND
+            }/v1/ai/text-to-diagram/chat-streaming`,
             payload: requestPayload,
             onChunk,
             parseChunk: parseOpenAIStreamChunk,
