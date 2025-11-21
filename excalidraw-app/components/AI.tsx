@@ -10,7 +10,7 @@ import { safelyParseJSON } from "@excalidraw/common";
 
 import type { ExcalidrawImperativeAPI } from "@excalidraw/excalidraw/types";
 
-import { streamFetch, parseOpenAIStreamChunk } from "../utils/streamFetch";
+import { streamFetch } from "../utils/streamFetch";
 
 export const AIComponents = ({
   excalidrawAPI,
@@ -110,7 +110,6 @@ export const AIComponents = ({
             }/v1/ai/text-to-diagram/chat-streaming`,
             payload: requestPayload,
             onChunk,
-            parseChunk: parseOpenAIStreamChunk,
             extractRateLimits: true,
           });
 

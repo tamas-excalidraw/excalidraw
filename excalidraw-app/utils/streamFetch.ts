@@ -7,7 +7,6 @@ interface StreamingOptions {
   url: string;
   payload: any;
   onChunk?: (chunk: string) => void;
-  parseChunk?: (data: string) => string | null;
   extractRateLimits?: boolean;
 }
 
@@ -73,13 +72,7 @@ async function* parseSSEStream(
 export async function streamFetch(
   options: StreamingOptions,
 ): Promise<StreamingResult> {
-  const {
-    url,
-    payload,
-    onChunk,
-    parseChunk,
-    extractRateLimits = true,
-  } = options;
+  const { url, payload, onChunk, extractRateLimits = true } = options;
 
   try {
     let fullResponse = "";
@@ -120,19 +113,15 @@ export async function streamFetch(
     }
 
     try {
-      let streamComplete = false;
-
       for await (const data of parseSSEStream(reader)) {
         if (data === "[DONE]") {
-          streamComplete = true;
           break;
         }
 
         try {
-          const chunk = parseChunk ? parseChunk(data) : data;
+          const chunk = JSON.parse(data);
 
           if (chunk === null) {
-            streamComplete = true;
             break;
           }
 
@@ -171,22 +160,4 @@ export async function streamFetch(
       error: new Error(err.message || "Request failed"),
     };
   }
-}
-
-export function parseOpenAIStreamChunk(data: string): string | null {
-  const json = JSON.parse(data);
-  const choices = json.choices;
-
-  if (choices && choices.length > 0) {
-    const choice = choices[0];
-
-    if (choice.finish_reason) {
-      return null;
-    }
-
-    const delta = choice.delta;
-    return delta?.content || "";
-  }
-
-  return "";
 }
