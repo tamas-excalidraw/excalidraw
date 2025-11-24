@@ -31,10 +31,6 @@ export interface ChatInterfaceProps {
   } | null;
   onViewAsMermaid?: () => void;
   generatedResponse?: string | null;
-  onUndo?: () => void;
-  onRedo?: () => void;
-  canUndo?: boolean;
-  canRedo?: boolean;
   bottomRightContent?: React.ReactNode;
   placeholder: {
     title: string;

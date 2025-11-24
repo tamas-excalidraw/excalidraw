@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState } from "react";
+import React, { useRef, useEffect, useState, FormEventHandler } from "react";
 import { KEYS } from "@excalidraw/common";
 import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
@@ -66,6 +66,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const canStop = isGenerating && !!onAbort;
 
+  const onInput: FormEventHandler<HTMLTextAreaElement> = (ev) => {
+    const target = ev.target as HTMLTextAreaElement;
+    target.style.height = "auto";
+    target.style.height = Math.min(target.scrollHeight, 120) + "px";
+  };
+
   return (
     <div className="chat-interface">
       <div className="chat-interface__messages">
@@ -97,11 +103,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             disabled={isGenerating}
             rows={1}
             cols={30}
-            onInput={(e) => {
-              const target = e.target as HTMLTextAreaElement;
-              target.style.height = "auto";
-              target.style.height = Math.min(target.scrollHeight, 120) + "px";
-            }}
+            onInput={onInput}
           />
           <SpeechRecognitionButton
             onTranscript={handleSpeechTranscript}
