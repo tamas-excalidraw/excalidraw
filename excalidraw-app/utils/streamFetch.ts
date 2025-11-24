@@ -8,6 +8,7 @@ interface StreamingOptions {
   payload: any;
   onChunk?: (chunk: string) => void;
   extractRateLimits?: boolean;
+  signal?: AbortSignal;
 }
 
 type StreamingResult = {
@@ -72,7 +73,7 @@ async function* parseSSEStream(
 export async function streamFetch(
   options: StreamingOptions,
 ): Promise<StreamingResult> {
-  const { url, payload, onChunk, extractRateLimits = true } = options;
+  const { url, payload, onChunk, extractRateLimits = true, signal } = options;
 
   try {
     let fullResponse = "";
@@ -86,6 +87,7 @@ export async function streamFetch(
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
+      signal,
     });
 
     if (extractRateLimits) {
@@ -134,7 +136,11 @@ export async function streamFetch(
         }
       }
     } catch (streamError: any) {
-      error = new Error(streamError.message || "Streaming error");
+      if (streamError.name === "AbortError") {
+        error = new Error("Request aborted");
+      } else {
+        error = new Error(streamError.message || "Streaming error");
+      }
     }
 
     if (error) {
@@ -156,6 +162,11 @@ export async function streamFetch(
       ...rateLimitInfo,
     };
   } catch (err: any) {
+    if (err.name === "AbortError") {
+      return {
+        error: new Error("Request aborted"),
+      };
+    }
     return {
       error: new Error(err.message || "Request failed"),
     };

@@ -79,6 +79,7 @@ type TTDPayload = {
     content: string;
   }>;
   onChunk?: (chunk: string) => void;
+  signal?: AbortSignal;
 };
 
 export const TTDDialog = (
@@ -211,6 +212,12 @@ export const TTDDialogBase = withInternalFallback(
         setShowPreview(true);
       }, 200);
 
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      const abortController = new AbortController();
+      abortControllerRef.current = abortController;
+
       try {
         setOnTextSubmitInProgess(true);
 
@@ -230,6 +237,7 @@ export const TTDDialogBase = withInternalFallback(
               accumulatedContentRef.current += chunk;
               renderMermaid(accumulatedContentRef.current);
             },
+            signal: abortController.signal,
           });
 
         if (typeof generatedResponse === "string") {
@@ -306,16 +314,25 @@ export const TTDDialogBase = withInternalFallback(
         }
       } catch (error: any) {
         let message: string | undefined = error.message;
-        if (!message || message === "Failed to fetch") {
-          message = "Request failed";
+        if (error.name === "AbortError" || message === "Request aborted") {
+          message = "Request aborted";
+          // Don't show error for user-initiated abort
+          updateLastMessage({
+            isGenerating: false,
+          });
+        } else {
+          if (!message || message === "Failed to fetch") {
+            message = "Request failed";
+          }
+          updateLastMessage({
+            isGenerating: false,
+            error: message,
+          });
+          setError(new Error(message));
         }
-        updateLastMessage({
-          isGenerating: false,
-          error: message,
-        });
-        setError(new Error(message));
       } finally {
         setOnTextSubmitInProgess(false);
+        abortControllerRef.current = null;
       }
     };
 
@@ -338,16 +355,9 @@ export const TTDDialogBase = withInternalFallback(
       files: BinaryFiles | null;
     }>({ elements: [], files: null });
 
-    const [error, setErrorr] = useState<Error | null>(null);
+    const [error, setError] = useState<Error | null>(null);
     const accumulatedContentRef = useRef<string>("");
     const abortControllerRef = useRef<AbortController | null>(null);
-
-    const setError = (error: any) => {
-      if (error) {
-        console.trace("### setError", error);
-      }
-      setErrorr(error);
-    };
 
     const renderMermaid = useCallback(
       async (mermaidDefinition: string) => {
@@ -355,12 +365,14 @@ export const TTDDialogBase = withInternalFallback(
           return false;
         }
 
+        let signal: AbortSignal;
         if (abortControllerRef.current) {
-          abortControllerRef.current.abort();
+          signal = abortControllerRef.current.signal;
+        } else {
+          const abortController = new AbortController();
+          abortControllerRef.current = abortController;
+          signal = abortController.signal;
         }
-
-        const abortController = new AbortController();
-        abortControllerRef.current = abortController;
 
         try {
           await convertMermaidToExcalidraw({
@@ -369,7 +381,7 @@ export const TTDDialogBase = withInternalFallback(
             mermaidToExcalidrawLib,
             setError,
             mermaidDefinition,
-            signal: abortController.signal,
+            signal,
           });
 
           setError(null);
@@ -510,6 +522,12 @@ export const TTDDialogBase = withInternalFallback(
     );
 
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+    const handleAbort = () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
 
     const handleNewChat = () => {
       if (abortControllerRef.current) {
@@ -690,6 +708,7 @@ export const TTDDialogBase = withInternalFallback(
                     isGenerating={onTextSubmitInProgess}
                     rateLimits={rateLimits}
                     generatedResponse={ttdGeneration?.generatedResponse}
+                    onAbort={handleAbort}
                     bottomRightContent={
                       <>
                         {ttdGeneration?.generatedResponse && (

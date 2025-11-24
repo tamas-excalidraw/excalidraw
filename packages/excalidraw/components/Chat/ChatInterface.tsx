@@ -1,6 +1,6 @@
 import React, { useRef, useEffect, useState } from "react";
 import { KEYS } from "@excalidraw/common";
-import { ArrowRightIcon } from "../icons";
+import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInterfaceProps } from "./types";
@@ -15,6 +15,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   rateLimits,
   bottomRightContent,
   placeholder,
+  onAbort,
 }) => {
   const [inputValue, setInputValue] = useState(currentPrompt);
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -40,6 +41,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const handleSubmit = () => {
+    if (isGenerating && onAbort) {
+      onAbort();
+      return;
+    }
     const trimmedPrompt = inputValue.trim();
     if (trimmedPrompt && !isGenerating) {
       onSendMessage(trimmedPrompt);
@@ -58,6 +63,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
     inputValue.trim().length > 0 &&
     !isGenerating &&
     (rateLimits?.rateLimitRemaining ?? 1) > 0;
+
+  const canStop = isGenerating && !!onAbort;
 
   return (
     <div className="chat-interface">
@@ -106,10 +113,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <button
             className="chat-interface__send-button"
             onClick={handleSubmit}
-            disabled={!canSend}
+            disabled={!canSend && !canStop}
             type="button"
           >
-            <InlineIcon size="1.5em" icon={ArrowRightIcon} />
+            <InlineIcon
+              size="1.5em"
+              icon={isGenerating ? StopIcon : ArrowRightIcon}
+            />
           </button>
         </div>
 

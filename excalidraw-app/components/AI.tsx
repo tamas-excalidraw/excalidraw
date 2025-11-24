@@ -102,7 +102,7 @@ export const AIComponents = ({
 
       <TTDDialog
         onTextSubmit={async (payload) => {
-          const { onChunk, ...requestPayload } = payload;
+          const { onChunk, signal, ...requestPayload } = payload;
 
           const result = await streamFetch({
             url: `${
@@ -111,6 +111,7 @@ export const AIComponents = ({
             payload: requestPayload,
             onChunk,
             extractRateLimits: true,
+            signal,
           });
 
           return result;

@@ -40,4 +40,5 @@ export interface ChatInterfaceProps {
     title: string;
     description: string;
   };
+  onAbort?: () => void;
 }
