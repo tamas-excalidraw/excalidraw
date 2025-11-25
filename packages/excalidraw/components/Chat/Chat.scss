@@ -323,6 +323,8 @@ $verticalBreakpoint: 861px;
     &__error {
       color: var(--color-danger);
       font-weight: 500;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
   }
 
