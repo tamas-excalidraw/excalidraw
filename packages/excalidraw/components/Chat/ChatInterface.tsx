@@ -4,7 +4,6 @@ import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInterfaceProps } from "./types";
-import { SpeechRecognitionButton } from "../SpeechRecognition";
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
@@ -22,17 +21,8 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView();
   }, [messages]);
-
-  const handleSpeechTranscript = (transcript: string) => {
-    setInputValue(transcript);
-    onPromptChange(transcript);
-  };
-
-  const handleSpeechError = (error: string) => {
-    console.error("Speech recognition error:", error);
-  };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -104,13 +94,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             rows={1}
             cols={30}
             onInput={onInput}
-          />
-          <SpeechRecognitionButton
-            onTranscript={handleSpeechTranscript}
-            onError={handleSpeechError}
-            disabled={isGenerating}
-            className="chat-interface__speech-recognition"
-            buttonClassName="chat-interface__voice-button"
           />
           <button
             className="chat-interface__send-button"

@@ -128,21 +128,15 @@ $verticalBreakpoint: 861px;
       background: var(--color-primary);
       color: var(--color-chat-icon);
       cursor: pointer;
-      transition: all 0.2s ease;
-
-      &:hover:not(:disabled) {
-        background: var(--color-primary-darker);
-        transform: translateY(-1px);
-      }
-
-      &:active:not(:disabled) {
-        transform: translateY(0);
-      }
 
       &:disabled {
         opacity: 0.5;
         cursor: not-allowed;
         transform: none;
+      }
+
+      &:hover {
+        background-color: var(--color-primary-darker);
       }
 
       svg {
@@ -230,7 +224,8 @@ $verticalBreakpoint: 861px;
       .chat-message__content {
         background: var(--color-primary);
         color: #fff;
-        border-radius: var(--border-radius-lg) var(--border-radius-lg) var(--border-radius-sm) var(--border-radius-lg);
+        border-radius: var(--border-radius-md);
+        min-width: 6rem;
       }
     }
 
@@ -240,7 +235,12 @@ $verticalBreakpoint: 861px;
       .chat-message__content {
         background: var(--color-surface-low);
         color: var(--color-on-surface);
-        border-radius: var(--border-radius-lg) var(--border-radius-lg) var(--border-radius-lg) var(--border-radius-sm);
+        border-radius: var(--border-radius-md);
+        min-width: 6rem;
+
+        &__body {
+          font-family: monospace;
+        }
       }
     }
 
