@@ -3,13 +3,31 @@
 $verticalBreakpoint: 861px;
 
 .excalidraw {
+
+  &.theme--dark {
+    .chat-interface {
+      &__messages {
+        min-height: 343px;
+        max-height: 343px;
+
+        border-left: 1px solid var(--dialog-border-color);
+        border-right: 1px solid var(--dialog-border-color);
+        border-top: 1px solid var(--dialog-border-color);
+      }
+    }
+
+    .chat-interface__input-outer {
+      border-left: 1px solid var(--dialog-border-color);
+      border-right: 1px solid var(--dialog-border-color);
+      border-bottom: 1px solid var(--dialog-border-color);
+    }
+  }
+
   .chat-interface {
     display: flex;
     flex-direction: column;
     height: 100%;
     max-height: 506px;
-    background: var(--color-surface-lowest);
-    border-radius: var(--border-radius-lg);
     overflow: hidden;
 
     @media screen and (max-width: $verticalBreakpoint) {
@@ -24,10 +42,14 @@ $verticalBreakpoint: 861px;
       display: flex;
       flex-direction: column;
       gap: 1rem;
-      min-height: 0;
-      max-height: 345px;
+      min-height: 353px;
+      max-height: 353px;
+      background-color: var(--color-surface-lowest);
+      border-top-left-radius: var(--border-radius-lg);
+      border-top-right-radius: var(--border-radius-lg);
 
       @media screen and (max-width: $verticalBreakpoint) {
+        min-height: 100px;
         max-height: 150px;
         padding: 0.75rem;
       }
@@ -42,7 +64,6 @@ $verticalBreakpoint: 861px;
 
       &-content {
         text-align: center;
-        color: var(--color-on-surface-variant);
 
         h3 {
           margin: 0 0 0.5rem 0;
@@ -62,6 +83,13 @@ $verticalBreakpoint: 861px;
       }
     }
 
+    &__input-outer {
+      padding: 1rem 1rem 0.5rem 1rem;
+      background: var(--color-surface-lowest);
+      border-bottom-left-radius: var(--border-radius-lg);
+      border-bottom-right-radius: var(--border-radius-lg);
+    }
+
     &__input-container {
       display: flex;
       flex-direction: column;
@@ -71,7 +99,6 @@ $verticalBreakpoint: 861px;
       display: flex;
       align-items: center;
       gap: 0.5rem;
-      background: var(--color-surface-lowest);
       border: 1px solid var(--dialog-border-color);
       border-radius: var(--border-radius-lg);
       padding: 0.75rem;
@@ -100,7 +127,7 @@ $verticalBreakpoint: 861px;
       border: none !important;
 
       &::placeholder {
-        color: var(--color-on-surface-variant);
+        color: var(--color-surface-lowest);
         opacity: 0.7;
       }
 
@@ -126,7 +153,7 @@ $verticalBreakpoint: 861px;
       border: none;
       border-radius: 50%;
       background: var(--color-primary);
-      color: var(--color-chat-icon);
+      color: var(--color-surface-lowest);
       cursor: pointer;
 
       &:disabled {
@@ -223,7 +250,7 @@ $verticalBreakpoint: 861px;
 
       .chat-message__content {
         background: var(--color-primary);
-        color: #fff;
+        color: var(--color-surface-lowest);
         border-radius: var(--border-radius-md);
         min-width: 6rem;
       }

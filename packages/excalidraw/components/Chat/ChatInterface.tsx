@@ -81,31 +81,33 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       </div>
 
       <div className="chat-interface__input-container">
-        <div className="chat-interface__input-wrapper">
-          <textarea
-            autoFocus
-            ref={inputRef}
-            className="chat-interface__input"
-            value={inputValue}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Start typing your diagram idea here..."
-            disabled={isGenerating}
-            rows={1}
-            cols={30}
-            onInput={onInput}
-          />
-          <button
-            className="chat-interface__send-button"
-            onClick={handleSubmit}
-            disabled={!canSend && !canStop}
-            type="button"
-          >
-            <InlineIcon
-              size="1.5em"
-              icon={isGenerating ? StopIcon : ArrowRightIcon}
+        <div className="chat-interface__input-outer">
+          <div className="chat-interface__input-wrapper">
+            <textarea
+              autoFocus
+              ref={inputRef}
+              className="chat-interface__input"
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Start typing your diagram idea here..."
+              disabled={isGenerating}
+              rows={1}
+              cols={30}
+              onInput={onInput}
             />
-          </button>
+            <button
+              className="chat-interface__send-button"
+              onClick={handleSubmit}
+              disabled={!canSend && !canStop}
+              type="button"
+            >
+              <InlineIcon
+                size="1.5em"
+                icon={isGenerating ? StopIcon : ArrowRightIcon}
+              />
+            </button>
+          </div>
         </div>
 
         {(rateLimits || bottomRightContent) && (
