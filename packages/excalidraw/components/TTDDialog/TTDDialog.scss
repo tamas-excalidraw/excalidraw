@@ -442,33 +442,6 @@ $verticalBreakpoint: 861px;
     }
   }
 
-  .ttd-dialog-menu-trigger {
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-on-surface);
-    border-radius: var(--border-radius-sm);
-    transition: background-color 0.2s ease;
-    position: relative;
-
-    &:hover:not(:disabled) {
-      background-color: var(--color-surface-low);
-    }
-
-    &:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
-    }
-
-    svg {
-      width: 20px;
-      height: 20px;
-    }
-  }
-
   .dropdown-menu-item-custom.ttd-chat-menu-item {
     display: flex;
     align-items: center;
