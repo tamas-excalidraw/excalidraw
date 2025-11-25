@@ -34,9 +34,24 @@ const MenuContent = ({
 
   const callbacksRef = useStable({ onClickOutside });
 
-  useOutsideClick(menuRef, () => {
-    callbacksRef.onClickOutside?.();
-  });
+  useOutsideClick(
+    menuRef,
+    () => {
+      callbacksRef.onClickOutside?.();
+    },
+    (event, container) => {
+      const target = event.target as HTMLElement;
+      if (container.contains(target)) {
+        return undefined;
+      }
+      // trigger btn
+      if (target.closest(".dropdown-menu-button")) {
+        return undefined;
+      }
+
+      return false;
+    },
+  );
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
