@@ -18,7 +18,6 @@ $verticalBreakpoint: 861px;
       display: flex;
       flex-direction: column;
       flex: 1 1 auto;
-      box-shadow: none;
     }
 
     .Modal__content {
@@ -115,7 +114,9 @@ $verticalBreakpoint: 861px;
       padding: 0.5rem 0;
       max-height: 400px;
       overflow-y: auto;
-      box-shadow: var(--modal-shadow) !important;
+      box-shadow: var(--shadow-island);
+      border-radius: var(--border-radius-lg);
+      padding: calc(var(--padding) * var(--space-factor));
     }
   }
 
@@ -303,11 +304,12 @@ $verticalBreakpoint: 861px;
       display: flex;
       align-items: center;
       gap: 1rem;
-      height: 40px;
+      height: 36px;
       flex-shrink: 0;
 
       label {
         font-size: 14px;
+        line-height: 22px;
         font-style: normal;
         font-weight: 600;
       }
@@ -478,7 +480,6 @@ $verticalBreakpoint: 861px;
       svg {
         width: 16px;
         height: 16px;
-        fill: var(--color-danger);
       }
 
       &:hover {
