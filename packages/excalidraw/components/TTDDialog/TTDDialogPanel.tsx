@@ -19,6 +19,7 @@ interface TTDDialogPanelProps {
   renderSubmitShortcut?: () => ReactNode;
   renderBottomRight?: () => ReactNode;
   className?: string;
+  panelActionOrientation?: "left" | "right";
 }
 
 export const TTDDialogPanel = ({
@@ -31,6 +32,7 @@ export const TTDDialogPanel = ({
   renderSubmitShortcut,
   renderBottomRight,
   className,
+  panelActionOrientation = "left",
 }: TTDDialogPanelProps) => {
   return (
     <div className={clsx("ttd-dialog-panel", className)}>
@@ -39,34 +41,31 @@ export const TTDDialogPanel = ({
         {renderTopRight?.()}
       </div>
       {children}
-      {panelAction && (
-        <div
-          className={clsx("ttd-dialog-panel-button-container", {
-            invisible: !panelAction,
-          })}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "flex-end",
-          }}
+      <div
+        className={clsx("ttd-dialog-panel-button-container", {
+          invisible: !panelAction,
+        })}
+        style={{
+          justifyContent:
+            panelActionOrientation === "left" ? "flex-start" : "flex-end",
+        }}
+      >
+        <Button
+          className="ttd-dialog-panel-button"
+          onSelect={panelAction ? panelAction.action : () => {}}
+          disabled={panelActionDisabled || onTextSubmitInProgess}
         >
-          <Button
-            className="ttd-dialog-panel-button"
-            onSelect={panelAction ? panelAction.action : () => {}}
-            disabled={panelActionDisabled || onTextSubmitInProgess}
-          >
-            <div className={clsx({ invisible: onTextSubmitInProgess })}>
-              {panelAction?.label}
-              {panelAction?.icon && <span>{panelAction.icon}</span>}
-            </div>
-            {onTextSubmitInProgess && <Spinner />}
-          </Button>
-          {!panelActionDisabled &&
-            !onTextSubmitInProgess &&
-            renderSubmitShortcut?.()}
-          {renderBottomRight?.()}
-        </div>
-      )}
+          <div className={clsx({ invisible: onTextSubmitInProgess })}>
+            {panelAction?.label}
+            {panelAction?.icon && <span>{panelAction.icon}</span>}
+          </div>
+          {onTextSubmitInProgess && <Spinner />}
+        </Button>
+        {!panelActionDisabled &&
+          !onTextSubmitInProgess &&
+          renderSubmitShortcut?.()}
+        {renderBottomRight?.()}
+      </div>
     </div>
   );
 };

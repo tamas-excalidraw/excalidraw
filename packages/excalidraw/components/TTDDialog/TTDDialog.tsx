@@ -602,11 +602,6 @@ export const TTDDialogBase = withInternalFallback(
             </TTDDialogTabTriggers>
           )}
 
-          <TTDDialogTab className="ttd-dialog-content" tab="mermaid">
-            <MermaidToExcalidraw
-              mermaidToExcalidrawLib={mermaidToExcalidrawLib}
-            />
-          </TTDDialogTab>
           {!("__fallback" in rest) && (
             <TTDDialogTab className="ttd-dialog-content" tab="text-to-diagram">
               <div
@@ -733,6 +728,7 @@ export const TTDDialogBase = withInternalFallback(
                 {showPreview && (
                   <TTDDialogPanel
                     label="Preview"
+                    panelActionOrientation="right"
                     panelAction={{
                       action: () => {
                         console.info("Panel action clicked");
@@ -753,6 +749,11 @@ export const TTDDialogBase = withInternalFallback(
               </div>
             </TTDDialogTab>
           )}
+          <TTDDialogTab className="ttd-dialog-content" tab="mermaid">
+            <MermaidToExcalidraw
+              mermaidToExcalidrawLib={mermaidToExcalidrawLib}
+            />
+          </TTDDialogTab>
         </TTDDialogTabs>
       </Dialog>
     );
