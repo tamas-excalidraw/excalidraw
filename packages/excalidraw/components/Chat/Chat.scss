@@ -31,23 +31,6 @@ $verticalBreakpoint: 861px;
         max-height: 150px;
         padding: 0.75rem;
       }
-
-      &::-webkit-scrollbar {
-        width: 6px;
-      }
-
-      &::-webkit-scrollbar-track {
-        background: transparent;
-      }
-
-      &::-webkit-scrollbar-thumb {
-        background: var(--color-surface-high);
-        border-radius: 3px;
-
-        &:hover {
-          background: var(--color-surface-highest);
-        }
-      }
     }
 
     &__empty-state {
