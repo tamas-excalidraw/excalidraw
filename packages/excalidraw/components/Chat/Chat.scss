@@ -251,7 +251,7 @@ $verticalBreakpoint: 861px;
         border-radius: var(--border-radius-md);
         min-width: 6rem;
 
-        &__body {
+        .chat-message__body {
           font-family: monospace;
         }
       }
