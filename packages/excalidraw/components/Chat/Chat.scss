@@ -114,7 +114,7 @@ $verticalBreakpoint: 861px;
       color: var(--color-on-surface);
 
       &::placeholder {
-        color: var(--color-on-surface);
+        color: var(--color-gray-40);
       }
 
       @media screen and (max-width: $verticalBreakpoint) {
