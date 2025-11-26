@@ -237,17 +237,9 @@ $verticalBreakpoint: 861px;
     align-items: center;
     justify-content: center;
     flex-grow: 1;
-    image-rendering: auto;
-    image-rendering: smooth;
-    backface-visibility: hidden;
-    transform-style: preserve-3d;
-    will-change: transform;
 
     canvas {
       image-rendering: auto;
-      image-rendering: smooth;
-      image-rendering: -webkit-optimize-contrast;
-      image-rendering: crisp-edges;
     }
   }
 

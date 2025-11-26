@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
+import { randomId } from "@excalidraw/common";
 import type { ChatMessageType, ChatHistory } from "../Chat";
 
 const TTD_CHATS_STORAGE_KEY = "excalidraw-ttd-chats";
@@ -12,6 +13,24 @@ export interface SavedChat {
   generatedResponse: string | null;
   timestamp: number;
 }
+
+export interface UseTTDChatStorageParams {
+  chatHistory: ChatHistory;
+  ttdSessionId: string;
+  ttdGeneration: {
+    generatedResponse: string | null;
+    prompt: string | null;
+  } | null;
+}
+
+export interface UseTTDChatStorageReturn {
+  savedChats: SavedChats;
+  saveCurrentChat: () => void;
+  deleteChat: (chatId: string) => SavedChats;
+  restoreChat: (chat: SavedChat) => SavedChat;
+  createNewChatId: () => string;
+}
+
 
 type SavedChats = SavedChat[];
 
@@ -42,23 +61,6 @@ const generateChatTitle = (firstMessage: string): string => {
   }
   return trimmed.substring(0, 47) + "...";
 };
-
-export interface UseTTDChatStorageParams {
-  chatHistory: ChatHistory;
-  ttdSessionId: string;
-  ttdGeneration: {
-    generatedResponse: string | null;
-    prompt: string | null;
-  } | null;
-}
-
-export interface UseTTDChatStorageReturn {
-  savedChats: SavedChats;
-  saveCurrentChat: () => void;
-  deleteChat: (chatId: string) => SavedChats;
-  restoreChat: (chat: SavedChat) => SavedChat;
-  createNewChatId: () => string;
-}
 
 export const useTTDChatStorage = ({
   chatHistory,
@@ -145,7 +147,7 @@ export const useTTDChatStorage = ({
 
   const createNewChatId = useCallback((): string => {
     saveCurrentChat();
-    return Math.random().toString(36).substring(2, 15);
+    return randomId();
   }, [saveCurrentChat]);
 
   return {
