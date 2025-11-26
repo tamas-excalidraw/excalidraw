@@ -85,21 +85,9 @@ export const TTDDialogBase = withInternalFallback(
           ) : (
             <TTDDialogTabTriggers>
               <TTDDialogTabTrigger tab="text-to-diagram">
-                <div style={{ display: "flex", alignItems: "center" }}>
+                <div className="ttd-dialog-tab-trigger__content">
                   {t("labels.textToDiagram")}
-                  <div
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      padding: "1px 6px",
-                      marginLeft: "10px",
-                      fontSize: 10,
-                      borderRadius: "12px",
-                      background: "var(--color-promo)",
-                      color: "var(--color-surface-lowest)",
-                    }}
-                  >
+                  <div className="ttd-dialog-tab-trigger__badge">
                     AI Beta
                   </div>
                 </div>

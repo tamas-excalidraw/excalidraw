@@ -486,15 +486,8 @@ export const TextToDiagram = ({
     >
       <TTDDialogPanel
         label={
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              width: "100%",
-            }}
-          >
-            <div style={{ display: "flex", gap: 5 }}>
+          <div className="ttd-dialog-panel__label-wrapper">
+            <div className="ttd-dialog-panel__label-group">
               <label>Chat</label>
               <Tooltip
                 label={
@@ -511,7 +504,7 @@ export const TextToDiagram = ({
                 </button>
               </Tooltip>
             </div>
-            <div style={{ position: "relative" }}>
+            <div className="ttd-dialog-panel__menu-wrapper">
               <DropdownMenu open={isMenuOpen}>
                 <DropdownMenu.Trigger
                   onToggle={() => setIsMenuOpen(!isMenuOpen)}

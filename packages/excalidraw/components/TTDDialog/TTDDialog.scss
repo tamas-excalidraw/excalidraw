@@ -83,6 +83,23 @@ $verticalBreakpoint: 861px;
     &[data-state="active"] {
       border-bottom: 2px solid var(--color-primary);
     }
+
+    &__content {
+      display: flex;
+      align-items: center;
+    }
+
+    &__badge {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1px 6px;
+      margin-left: 10px;
+      font-size: 10px;
+      border-radius: 12px;
+      background: var(--color-promo);
+      color: var(--color-surface-lowest);
+    }
   }
 
   .ttd-dialog-triggers {
@@ -304,6 +321,22 @@ $verticalBreakpoint: 861px;
         font-style: normal;
         font-weight: 600;
       }
+    }
+
+    &__label-wrapper {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      width: 100%;
+    }
+
+    &__label-group {
+      display: flex;
+      gap: 5px;
+    }
+
+    &__menu-wrapper {
+      position: relative;
     }
 
     &:first-child {
