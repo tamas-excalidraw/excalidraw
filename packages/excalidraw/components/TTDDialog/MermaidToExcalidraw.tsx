@@ -106,7 +106,7 @@ const MermaidToExcalidraw = ({
         <TTDDialogPanel label={t("mermaid.syntax")}>
           <TTDDialogInput
             input={text}
-            placeholder={"Write Mermaid diagram defintion here..."}
+            placeholder={t("mermaid.inputPlaceholder")}
             onChange={(event) => setText(event.target.value)}
             onKeyboardSubmit={() => {
               onInsertToEditor();

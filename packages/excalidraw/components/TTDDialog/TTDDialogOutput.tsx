@@ -1,4 +1,5 @@
 import Spinner from "../Spinner";
+import { t } from "../../i18n";
 
 const ErrorComp = ({ error }: { error: string }) => {
   return (
@@ -6,7 +7,7 @@ const ErrorComp = ({ error }: { error: string }) => {
       data-testid="ttd-dialog-output-error"
       className="ttd-dialog-output-error"
     >
-      Error! <p>{error}</p>
+      {t("ttd.error")} <p>{error}</p>
     </div>
   );
 };

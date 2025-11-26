@@ -88,11 +88,13 @@ export const TTDDialogBase = withInternalFallback(
                 <div className="ttd-dialog-tab-trigger__content">
                   {t("labels.textToDiagram")}
                   <div className="ttd-dialog-tab-trigger__badge">
-                    AI Beta
+                    {t("chat.aiBeta")}
                   </div>
                 </div>
               </TTDDialogTabTrigger>
-              <TTDDialogTabTrigger tab="mermaid">Mermaid</TTDDialogTabTrigger>
+              <TTDDialogTabTrigger tab="mermaid">
+                {t("mermaid.label")}
+              </TTDDialogTabTrigger>
             </TTDDialogTabTriggers>
           )}
 

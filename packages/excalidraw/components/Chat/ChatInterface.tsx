@@ -4,6 +4,7 @@ import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
 import { ChatMessage } from "./ChatMessage";
 import { ChatInterfaceProps } from "./types";
+import { t } from "../../i18n";
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
@@ -90,7 +91,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder="Start typing your diagram idea here..."
+              placeholder={t("chat.inputPlaceholder")}
               disabled={isGenerating}
               rows={1}
               cols={30}
@@ -115,7 +116,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="chat-interface__footer-left">
               {rateLimits && (
                 <div className="chat-interface__rate-limit">
-                  {rateLimits?.rateLimitRemaining} requests left today
+                  {t("chat.rateLimitRemaining", {
+                    count: rateLimits?.rateLimitRemaining,
+                  })}
                 </div>
               )}
             </div>

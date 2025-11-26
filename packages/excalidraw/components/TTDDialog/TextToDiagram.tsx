@@ -6,6 +6,7 @@ import { randomId } from "@excalidraw/common";
 
 import { trackEvent } from "../../analytics";
 import { atom, useAtom } from "../../editor-jotai";
+import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
 import {
   ArrowRightIcon,
@@ -210,13 +211,15 @@ export const TextToDiagram = ({
       if (promptWithContext.length < MIN_PROMPT_LENGTH) {
         setError(
           new Error(
-            `Prompt is too short (min ${MIN_PROMPT_LENGTH} characters)`,
+            t("chat.errors.promptTooShort", { min: MIN_PROMPT_LENGTH }),
           ),
         );
       }
       if (promptWithContext.length > MAX_PROMPT_LENGTH) {
         setError(
-          new Error(`Prompt is too long (max ${MAX_PROMPT_LENGTH} characters)`),
+          new Error(
+            t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH }),
+          ),
         );
       }
 
@@ -276,7 +279,11 @@ export const TextToDiagram = ({
         return;
       }
       if (!generatedResponse) {
-        setAssistantError(updateLastMessage, setError, "Generation failed");
+        setAssistantError(
+          updateLastMessage,
+          setError,
+          t("chat.errors.generationFailed"),
+        );
         return;
       }
 
@@ -306,18 +313,15 @@ export const TextToDiagram = ({
     (generatedResponse?: string) => {
       trackEvent("ai", "mermaid parse failed", "ttd");
       const errorMessage = generatedResponse
-        ? `Generated an invalid diagram :(. You may also try a different prompt.
-                Response: ${generatedResponse}`
-        : "Generated an invalid diagram :(. You may also try a different prompt.";
+        ? t("chat.errors.invalidDiagramWithResponse", {
+            response: generatedResponse,
+          })
+        : t("chat.errors.invalidDiagram");
       updateLastMessage({
         isGenerating: false,
         error: errorMessage,
       });
-      setError(
-        new Error(
-          "Generated an invalid diagram :(. You may also try a different prompt.",
-        ),
-      );
+      setError(new Error(t("chat.errors.invalidDiagram")));
     },
     [updateLastMessage],
   );
@@ -327,13 +331,13 @@ export const TextToDiagram = ({
       let message: string | undefined = error.message;
 
       if (error.name === "AbortError" || message === "Request aborted") {
-        message = "Request aborted";
+        message = t("chat.errors.requestAborted");
         updateLastMessage({
           isGenerating: false,
         });
       } else {
         if (!message || message === "Failed to fetch") {
-          message = "Request failed";
+          message = t("chat.errors.requestFailed");
         }
         updateLastMessage({
           isGenerating: false,
@@ -488,16 +492,11 @@ export const TextToDiagram = ({
         label={
           <div className="ttd-dialog-panel__label-wrapper">
             <div className="ttd-dialog-panel__label-group">
-              <label>Chat</label>
-              <Tooltip
-                label={
-                  "Currently we use Mermaid as a middle step, so you'll get best results if you describe a diagram, workflow, flow chart, and similar."
-                }
-                long
-              >
+              <label>{t("chat.label")}</label>
+              <Tooltip label={t("chat.helpTooltip")} long>
                 <button
                   type="button"
-                  aria-label="Text-to-diagram help"
+                  aria-label={t("chat.helpAriaLabel")}
                   className="ttd-dialog-info"
                 >
                   {HelpIconThin}
@@ -510,8 +509,8 @@ export const TextToDiagram = ({
                   onToggle={() => setIsMenuOpen(!isMenuOpen)}
                   className="ttd-dialog-menu-trigger"
                   disabled={onTextSubmitInProgess}
-                  title="Menu"
-                  aria-label="Menu"
+                  title={t("chat.menu")}
+                  aria-label={t("chat.menu")}
                 >
                   {HamburgerMenuIcon}
                 </DropdownMenu.Trigger>
@@ -521,7 +520,7 @@ export const TextToDiagram = ({
                   placement="bottom"
                 >
                   <DropdownMenu.Item onSelect={handleNewChat}>
-                    New Chat
+                    {t("chat.newChat")}
                   </DropdownMenu.Item>
                   {savedChats.length > 0 && (
                     <>
@@ -542,8 +541,8 @@ export const TextToDiagram = ({
                           <button
                             className="ttd-chat-menu-item__delete"
                             onClick={(e) => handleDeleteChat(chat.id, e)}
-                            title="Delete chat"
-                            aria-label="Delete chat"
+                            title={t("chat.deleteChat")}
+                            aria-label={t("chat.deleteChat")}
                             type="button"
                           >
                             {TrashIcon}
@@ -576,28 +575,27 @@ export const TextToDiagram = ({
                   onClick={onViewAsMermaid}
                   type="button"
                 >
-                  View as Mermaid
+                  {t("chat.viewAsMermaid")}
                   <InlineIcon icon={ArrowRightIcon} />
                 </button>
               )}
             </>
           }
           placeholder={{
-            title: "Let's design your diagram",
-            description:
-              "Describe the diagram you want to create, and I'll generate it for you.",
+            title: t("chat.placeholder.title"),
+            description: t("chat.placeholder.description"),
           }}
         />
       </TTDDialogPanel>
       {showPreview && (
         <TTDDialogPanel
-          label="Preview"
+          label={t("chat.preview")}
           panelActionOrientation="right"
           panelAction={{
             action: () => {
               insertToEditor({ app, data });
             },
-            label: "Insert",
+            label: t("chat.insert"),
             icon: ArrowRightIcon,
           }}
           className="ttd-dialog-preview-panel"

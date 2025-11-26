@@ -1,5 +1,6 @@
 import React from "react";
 import { ChatMessage as ChatMessageType } from "./types";
+import { t } from "../../i18n";
 
 interface ChatMessageProps {
   message: ChatMessageType;
@@ -15,7 +16,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({ message }) => {
       <div className="chat-message__content">
         <div className="chat-message__header">
           <span className="chat-message__role">
-            {message.type === "user" ? "You" : "AI Assistant"}
+            {message.type === "user"
+              ? t("chat.role.user")
+              : t("chat.role.assistant")}
           </span>
           <span className="chat-message__timestamp">
             {formatTime(message.timestamp)}
