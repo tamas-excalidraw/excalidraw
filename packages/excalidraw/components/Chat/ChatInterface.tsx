@@ -91,7 +91,11 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               value={inputValue}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
-              placeholder={t("chat.inputPlaceholder")}
+              placeholder={
+                messages.length > 0
+                  ? t("chat.inputPlaceholderWithMessages")
+                  : t("chat.inputPlaceholder")
+              }
               disabled={isGenerating}
               rows={1}
               cols={30}

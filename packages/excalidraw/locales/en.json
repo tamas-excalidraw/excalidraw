@@ -620,6 +620,7 @@
   },
   "chat": {
     "inputPlaceholder": "Start typing your diagram idea here...",
+    "inputPlaceholderWithMessages": "Continue refining your diagram...",
     "rateLimitRemaining": "{{count}} requests left today",
     "role": {
       "user": "You",
