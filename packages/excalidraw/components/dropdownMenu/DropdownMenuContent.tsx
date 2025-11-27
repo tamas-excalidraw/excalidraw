@@ -5,7 +5,7 @@ import { EVENT, KEYS } from "@excalidraw/common";
 
 import { useOutsideClick } from "../../hooks/useOutsideClick";
 import { useStable } from "../../hooks/useStable";
-import { useDevice } from "../App";
+import { useEditorInterface } from "../App";
 import { Island } from "../Island";
 import Stack from "../Stack";
 
@@ -29,29 +29,21 @@ const MenuContent = ({
   style?: React.CSSProperties;
   placement?: "top" | "bottom";
 }) => {
-  const device = useDevice();
+  const editorInterface = useEditorInterface();
   const menuRef = useRef<HTMLDivElement>(null);
 
   const callbacksRef = useStable({ onClickOutside });
 
-  useOutsideClick(
-    menuRef,
-    () => {
+  useOutsideClick(menuRef, (event) => {
+    // prevents closing if clicking on the trigger button
+    if (
+      !menuRef.current
+        ?.closest(".dropdown-menu-container")
+        ?.contains(event.target)
+    ) {
       callbacksRef.onClickOutside?.();
-    },
-    (event, container) => {
-      const target = event.target as HTMLElement;
-      if (container.contains(target)) {
-        return undefined;
-      }
-      // trigger btn
-      if (target.closest(".dropdown-menu-button")) {
-        return undefined;
-      }
-
-      return false;
-    },
-  );
+    }
+  });
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -74,7 +66,7 @@ const MenuContent = ({
   }, [callbacksRef]);
 
   const classNames = clsx(`dropdown-menu ${className}`, {
-    "dropdown-menu--mobile": device.editor.isMobile,
+    "dropdown-menu--mobile": editorInterface.formFactor === "phone",
     "dropdown-menu--placement-top": placement === "top",
   }).trim();
 
@@ -88,13 +80,8 @@ const MenuContent = ({
       >
         {/* the zIndex ensures this menu has higher stacking order,
     see https://github.com/excalidraw/excalidraw/pull/1445 */}
-        {device.editor.isMobile ? (
-          <Stack.Col
-            className="dropdown-menu-container"
-            style={{ ["--gap" as any]: 1.25 }}
-          >
-            {children}
-          </Stack.Col>
+        {editorInterface.formFactor === "phone" ? (
+          <Stack.Col className="dropdown-menu-container">{children}</Stack.Col>
         ) : (
           <Island
             className="dropdown-menu-container"
