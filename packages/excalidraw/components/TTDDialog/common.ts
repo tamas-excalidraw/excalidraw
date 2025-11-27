@@ -7,8 +7,6 @@ import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidra
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 import { EditorLocalStorage } from "../../data/EditorLocalStorage";
-import { canvasToBlob } from "../../data/blob";
-import { t } from "../../i18n";
 import { convertToExcalidrawElements, exportToCanvas } from "../../index";
 
 import type { AppClassProperties, BinaryFiles } from "../../types";
@@ -57,11 +55,9 @@ interface ConvertMermaidToExcalidrawFormatProps {
 }
 
 export const justValidateMermaid = async (mermaidDefinition: string) => {
-  try {
-    return validateMermaid(mermaidDefinition);
-  } catch (err) {
-    return validateMermaid(mermaidDefinition.replace(/"/g, "'"));
-  }
+  const isValid = validateMermaid(mermaidDefinition);
+
+  return isValid || validateMermaid(mermaidDefinition.replace(/"/g, "'"));
 };
 
 export const convertMermaidToExcalidraw = async ({
@@ -84,7 +80,6 @@ export const convertMermaidToExcalidraw = async ({
     return;
   }
 
-  // Check if already aborted
   if (signal?.aborted) {
     return;
   }
@@ -145,19 +140,6 @@ export const convertMermaidToExcalidraw = async ({
         window.devicePixelRatio,
     });
 
-    if (signal?.aborted) {
-      return;
-    }
-    // if converting to blob fails, there's some problem that will
-    // likely prevent preview and export (e.g. canvas too big)
-    try {
-      // await canvasToBlob(canvas);
-    } catch (e: any) {
-      if (e.name === "CANVAS_POSSIBLY_TOO_BIG") {
-        throw new Error(t("canvasError.canvasTooBig"));
-      }
-      throw e;
-    }
     if (signal?.aborted) {
       return;
     }
