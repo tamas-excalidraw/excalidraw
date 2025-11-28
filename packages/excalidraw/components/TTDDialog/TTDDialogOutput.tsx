@@ -23,6 +23,7 @@ export const TTDDialogOutput = ({
   canvasRef,
   loaded,
 }: TTDDialogOutputProps) => {
+  console.log("errro", error);
   return (
     <div className="ttd-dialog-output-wrapper">
       {error && <ErrorComp error={error.message} />}

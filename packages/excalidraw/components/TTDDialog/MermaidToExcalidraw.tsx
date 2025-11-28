@@ -53,18 +53,28 @@ const MermaidToExcalidraw = ({
   const app = useApp();
 
   useEffect(() => {
-    convertMermaidToExcalidraw({
-      canvasRef,
-      data,
-      mermaidToExcalidrawLib,
-      setError,
-      mermaidDefinition: deferredText,
-    }).catch((err) => {
-      if (isDevEnv()) {
-        console.error("Failed to parse mermaid definition", err);
-      }
-    });
+    const doRender = async () => {
+      try {
+        const result = await convertMermaidToExcalidraw({
+          canvasRef,
+          data,
+          mermaidToExcalidrawLib,
+          setError,
+          mermaidDefinition: deferredText,
+        });
 
+        if (!result.success) {
+          const err = result.error ?? new Error("Invalid mermaid definition");
+          setError(err);
+        }
+      } catch (err) {
+        if (isDevEnv()) {
+          console.error("Failed to parse mermaid definition", err);
+        }
+      }
+    };
+
+    doRender();
     debouncedSaveMermaidDefinition(deferredText);
   }, [deferredText, mermaidToExcalidrawLib]);
 

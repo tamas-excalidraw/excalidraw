@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
+import { validateMermaid } from "@excalidraw/mermaid-to-excalidraw";
 
 import { randomId } from "@excalidraw/common";
 
@@ -24,7 +25,6 @@ import { TTDDialogPanel } from "./TTDDialogPanel";
 import {
   convertMermaidToExcalidraw,
   insertToEditor,
-  justValidateMermaid,
   saveMermaidDataToStorage,
 } from "./common";
 
@@ -144,7 +144,13 @@ export const TextToDiagram = ({
     files: BinaryFiles | null;
   }>({ elements: [], files: null });
 
-  const [error, setError] = useState<Error | null>(null);
+  const [error, setErrorr] = useState<Error | null>(null);
+
+  const setError = (p: any) => {
+    console.trace("setError", p);
+    setErrorr(p);
+  };
+
   const accumulatedContentRef = useRef("");
   const streamingAbortControllerRef = useRef<AbortController | null>(null);
   const mermaidRenderAbortControllerRef = useRef<AbortController | null>(null);
@@ -172,7 +178,6 @@ export const TextToDiagram = ({
           signal: abortController.signal,
         });
 
-        setError(null);
         return true;
       } catch (err) {
         if (err instanceof Error && err.name === "AbortError") {
@@ -217,9 +222,7 @@ export const TextToDiagram = ({
       }
       if (promptWithContext.length > MAX_PROMPT_LENGTH) {
         setError(
-          new Error(
-            t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH }),
-          ),
+          new Error(t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH })),
         );
       }
 
@@ -294,14 +297,15 @@ export const TextToDiagram = ({
 
       saveCurrentChat();
 
-      const isValid = await justValidateMermaid(generatedResponse);
+      const isValid = await validateMermaid(generatedResponse);
 
       if (isValid) {
         trackEvent("ai", "mermaid parse success", "ttd");
       } else {
-        handleInvalidMermaidError(generatedResponse);
+        throw new Error("Invalid mermaid diagram");
       }
     } catch (error: unknown) {
+      handleInvalidMermaidError();
       handleGenerationError(error as Error);
     } finally {
       setOnTextSubmitInProgess(false);
@@ -309,22 +313,15 @@ export const TextToDiagram = ({
     }
   };
 
-  const handleInvalidMermaidError = useCallback(
-    (generatedResponse?: string) => {
-      trackEvent("ai", "mermaid parse failed", "ttd");
-      const errorMessage = generatedResponse
-        ? t("chat.errors.invalidDiagramWithResponse", {
-            response: generatedResponse,
-          })
-        : t("chat.errors.invalidDiagram");
-      updateLastMessage({
-        isGenerating: false,
-        error: errorMessage,
-      });
-      setError(new Error(t("chat.errors.invalidDiagram")));
-    },
-    [updateLastMessage],
-  );
+  const handleInvalidMermaidError = useCallback(() => {
+    trackEvent("ai", "mermaid parse failed", "ttd");
+    const errorMessage = t("chat.errors.invalidDiagram");
+    updateLastMessage({
+      isGenerating: false,
+      error: errorMessage,
+    });
+    setError(new Error(t("chat.errors.invalidDiagram")));
+  }, [updateLastMessage]);
 
   const handleGenerationError = useCallback(
     (error: Error) => {
@@ -465,12 +462,7 @@ export const TextToDiagram = ({
         canvasNode.replaceChildren();
       }
     }
-  }, [
-    createNewChatId,
-    setTtdSessionId,
-    setChatHistory,
-    setTtdGeneration,
-  ]);
+  }, [createNewChatId, setTtdSessionId, setChatHistory, setTtdGeneration]);
 
   const handleNewChat = () => {
     if (streamingAbortControllerRef.current) {
