@@ -31,7 +31,6 @@ export interface UseTTDChatStorageReturn {
   createNewChatId: () => string;
 }
 
-
 type SavedChats = SavedChat[];
 
 const saveChatsToStorage = (chats: SavedChats) => {
@@ -87,7 +86,20 @@ export const useTTDChatStorage = ({
     }
 
     const currentSavedChats = loadChatsFromStorage();
+    const existingChat = currentSavedChats.find(
+      (chat) => chat.id === ttdSessionId,
+    );
     const title = generateChatTitle(firstUserMessage.content);
+
+    const messagesChanged =
+      !existingChat ||
+      existingChat.messages.length !== chatHistory.messages.length ||
+      existingChat.messages.some(
+        (msg, i) =>
+          msg.id !== chatHistory.messages[i]?.id ||
+          msg.content !== chatHistory.messages[i]?.content,
+      );
+
     const chatToSave: SavedChat = {
       id: ttdSessionId,
       title,
@@ -101,7 +113,9 @@ export const useTTDChatStorage = ({
       })),
       currentPrompt: chatHistory.currentPrompt,
       generatedResponse: ttdGeneration?.generatedResponse || null,
-      timestamp: Date.now(),
+      timestamp: messagesChanged
+        ? Date.now()
+        : existingChat?.timestamp ?? Date.now(),
     };
 
     const updatedChats = [
