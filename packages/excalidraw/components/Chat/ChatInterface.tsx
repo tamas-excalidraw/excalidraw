@@ -1,4 +1,4 @@
-import React, { useRef, useEffect, useState, FormEventHandler } from "react";
+import React, { useRef, useEffect, FormEventHandler } from "react";
 import { KEYS } from "@excalidraw/common";
 import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
@@ -17,7 +17,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   placeholder,
   onAbort,
 }) => {
-  const [inputValue, setInputValue] = useState(currentPrompt);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -27,7 +26,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
-    setInputValue(value);
     onPromptChange(value);
   };
 
@@ -36,10 +34,10 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       onAbort();
       return;
     }
-    const trimmedPrompt = inputValue.trim();
+    const trimmedPrompt = currentPrompt.trim();
     if (trimmedPrompt && !isGenerating) {
       onSendMessage(trimmedPrompt);
-      setInputValue("");
+      onPromptChange("");
     }
   };
 
@@ -51,7 +49,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const canSend =
-    inputValue.trim().length > 0 &&
+    currentPrompt.trim().length > 0 &&
     !isGenerating &&
     (rateLimits?.rateLimitRemaining ?? 1) > 0;
 
@@ -88,7 +86,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               autoFocus
               ref={inputRef}
               className="chat-interface__input"
-              value={inputValue}
+              value={currentPrompt}
               onChange={handleInputChange}
               onKeyDown={handleKeyDown}
               placeholder={

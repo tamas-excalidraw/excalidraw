@@ -33,6 +33,7 @@ import type { ChatMessageType } from "../Chat";
 import type { SavedChat } from "./useTTDChatStorage";
 import type { BinaryFiles } from "../../types";
 import { isFiniteNumber } from "@excalidraw/math";
+import clsx from "clsx";
 
 const MIN_PROMPT_LENGTH = 3;
 const MAX_PROMPT_LENGTH = 1000;
@@ -366,7 +367,7 @@ export const TextToDiagram = ({
               ? msg.timestamp
               : new Date(msg.timestamp),
         })),
-        currentPrompt: chat.currentPrompt,
+        currentPrompt: "",
       });
       setTtdGeneration({
         generatedResponse: chat.generatedResponse,
@@ -520,7 +521,10 @@ export const TextToDiagram = ({
                       {savedChats.map((chat) => (
                         <DropdownMenu.ItemCustom
                           key={chat.id}
-                          className="ttd-chat-menu-item"
+                          className={clsx("ttd-chat-menu-item", {
+                            "ttd-chat-menu-item--active":
+                              chat.id === ttdSessionId,
+                          })}
                           onClick={() => {
                             if (restoreChatRef.current) {
                               restoreChatRef.current(chat);

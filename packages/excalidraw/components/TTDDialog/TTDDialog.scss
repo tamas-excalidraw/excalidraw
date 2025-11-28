@@ -133,7 +133,7 @@ $verticalBreakpoint: 861px;
     margin: 0;
     right: 0;
     left: auto;
-    min-width: 10rem;
+    min-width: 280px;
 
     .dropdown-menu-container {
       padding: 0.5rem 0;
@@ -348,6 +348,10 @@ $verticalBreakpoint: 861px;
 
     &__menu-wrapper {
       position: relative;
+      .dropdown-menu {
+        margin-top: 0.5rem;
+        right: 3px;
+      }
     }
 
     &:first-child {
@@ -488,9 +492,18 @@ $verticalBreakpoint: 861px;
     cursor: pointer;
     position: relative;
     margin-top: 0;
+    border: 1px solid transparent;
 
     &:hover {
       background-color: var(--button-hover-bg);
+    }
+
+    &:active {
+      border: 1px solid var(--button-active-border);
+    }
+
+    &--active {
+      background-color: var(--color-surface-primary-container);
     }
 
     &__title {
