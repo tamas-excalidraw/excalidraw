@@ -388,6 +388,7 @@ export const TextToDiagram = ({
       await parseMermaidToExcalidraw(generatedResponse ?? "");
       trackEvent("ai", "mermaid parse success", "ttd");
     } catch (error: unknown) {
+      console.log("### err", error, (error as Error).message);
       handleError(error as Error, "parse");
     } finally {
       setOnTextSubmitInProgess(false);
@@ -430,20 +431,6 @@ export const TextToDiagram = ({
       });
     }
   };
-
-  const handleMermaidTabClick = useCallback(
-    (message: ChatMessageType) => {
-      const mermaidContent =
-        ttdGeneration?.generatedResponse || message.content || "";
-      if (mermaidContent) {
-        saveMermaidDataToStorage(mermaidContent);
-      }
-      setAppState({
-        openDialog: { name: "ttd", tab: "mermaid" },
-      });
-    },
-    [setAppState, ttdGeneration?.generatedResponse],
-  );
 
   const handleAiRepairClick = useCallback(
     async (message: ChatMessageType) => {
@@ -715,7 +702,7 @@ export const TextToDiagram = ({
           isGenerating={onTextSubmitInProgess}
           generatedResponse={ttdGeneration?.generatedResponse}
           onAbort={handleAbort}
-          onMermaidTabClick={handleMermaidTabClick}
+          onMermaidTabClick={onViewAsMermaid}
           onAiRepairClick={handleAiRepairClick}
           placeholder={{
             title: t("chat.placeholder.title"),
