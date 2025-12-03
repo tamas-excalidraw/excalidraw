@@ -557,9 +557,9 @@ $verticalBreakpoint: 861px;
     padding: 0.2rem 0.5rem;
     cursor: pointer;
     position: relative;
-    margin-top: 0;
     border: 1px solid transparent;
     border-radius: var(--border-radius-md);
+    margin-top: 1px;
 
     &:hover {
       background-color: var(--button-hover-bg);
