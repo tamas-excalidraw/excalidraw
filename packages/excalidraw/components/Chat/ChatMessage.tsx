@@ -2,11 +2,13 @@ import React from "react";
 import { ChatMessage as ChatMessageType } from "./types";
 import { t } from "../../i18n";
 import { FilledButton } from "../FilledButton";
+import { TrashIcon } from "../icons";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   onMermaidTabClick?: (message: ChatMessageType) => void;
   onAiRepairClick?: (message: ChatMessageType) => void;
+  onDeleteMessage?: (messageId: string) => void;
   rateLimitRemaining?: number;
 }
 
@@ -14,6 +16,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   message,
   onMermaidTabClick,
   onAiRepairClick,
+  onDeleteMessage,
   rateLimitRemaining,
 }) => {
   const formatTime = (date: Date) => {
@@ -109,6 +112,17 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
         </div>
       </div>
+      {message.type === "assistant" && onDeleteMessage && (
+        <button
+          className="chat-message__delete"
+          onClick={() => onDeleteMessage(message.id)}
+          type="button"
+          aria-label={t("chat.deleteMessage")}
+          title={t("chat.deleteMessage")}
+        >
+          {TrashIcon}
+        </button>
+      )}
     </div>
   );
 };

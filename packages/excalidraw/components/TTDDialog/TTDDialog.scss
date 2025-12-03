@@ -595,6 +595,10 @@ $verticalBreakpoint: 861px;
         width: 16px;
         height: 16px;
       }
+
+      &:hover {
+        color: var(--color-danger);
+      }
     }
   }
 

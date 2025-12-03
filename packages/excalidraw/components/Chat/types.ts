@@ -33,4 +33,5 @@ export interface ChatInterfaceProps {
   onAbort?: () => void;
   onMermaidTabClick?: (message: ChatMessage) => void;
   onAiRepairClick?: (message: ChatMessage) => void;
+  onDeleteMessage?: (messageId: string) => void;
 }

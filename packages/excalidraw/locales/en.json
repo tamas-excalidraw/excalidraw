@@ -635,6 +635,7 @@
     "menu": "Menu",
     "newChat": "New Chat",
     "deleteChat": "Delete chat",
+    "deleteMessage": "Delete message",
     "viewAsMermaid": "View as Mermaid",
     "placeholder": {
       "title": "Let's design your diagram",

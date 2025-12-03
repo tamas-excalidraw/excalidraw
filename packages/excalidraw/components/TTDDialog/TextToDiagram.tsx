@@ -159,6 +159,34 @@ export const TextToDiagram = ({
     });
   };
 
+  const handleDeleteMessage = useCallback(
+    (messageId: string) => {
+      const assistantMessageIndex = chatHistory.messages.findIndex(
+        (msg) => msg.id === messageId && msg.type === "assistant",
+      );
+
+      const remainingMessages = chatHistory.messages.slice(
+        0,
+        assistantMessageIndex - 1,
+      );
+
+      const latestAssistantMessage = remainingMessages.reduce(
+        (soFar, curr) => (curr.type === "assistant" ? curr : soFar),
+        null as ChatMessageType | null,
+      );
+
+      if (latestAssistantMessage) {
+        renderMermaid(latestAssistantMessage.content);
+      }
+
+      setChatHistory({
+        ...chatHistory,
+        messages: remainingMessages,
+      });
+    },
+    [setChatHistory, setTtdGeneration, ttdGeneration],
+  );
+
   const renderMermaid = useCallback(
     async (mermaidDefinition: string) => {
       if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
@@ -704,6 +732,7 @@ export const TextToDiagram = ({
           onAbort={handleAbort}
           onMermaidTabClick={onViewAsMermaid}
           onAiRepairClick={handleAiRepairClick}
+          onDeleteMessage={handleDeleteMessage}
           placeholder={{
             title: t("chat.placeholder.title"),
             description: t("chat.placeholder.description"),

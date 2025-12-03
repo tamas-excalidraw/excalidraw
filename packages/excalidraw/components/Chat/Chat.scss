@@ -174,7 +174,9 @@ $verticalBreakpoint: 861px;
 
   .chat-message {
     display: flex;
+    align-items: center;
     margin-bottom: 1rem;
+    gap: 0.5rem;
 
     &--user {
       justify-content: flex-end;
@@ -239,6 +241,28 @@ $verticalBreakpoint: 861px;
 
     &__timestamp {
       font-size: 0.625rem;
+    }
+
+    &__delete {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0.25rem;
+      color: var(--color-gray-40);
+      transition: color 0.2s ease;
+      flex-shrink: 0;
+
+      &:hover {
+        color: var(--color-danger);
+      }
+
+      svg {
+        width: 14px;
+        height: 14px;
+      }
     }
 
     &__body {
