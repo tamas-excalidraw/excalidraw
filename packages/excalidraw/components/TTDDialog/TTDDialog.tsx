@@ -74,7 +74,7 @@ export const TTDDialogBase = withInternalFallback(
         onCloseRequest={() => {
           app.setOpenDialog(null);
         }}
-        size={1200}
+        size={1520}
         title={false}
         {...rest}
         autofocus={false}

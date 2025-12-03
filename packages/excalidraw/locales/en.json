@@ -625,7 +625,8 @@
     "rateLimitRemaining": "{{count}} requests left today",
     "role": {
       "user": "You",
-      "assistant": "AI Assistant"
+      "assistant": "AI Assistant",
+      "system": "System"
     },
     "aiBeta": "AI Beta",
     "label": "Chat",
@@ -646,9 +647,13 @@
       "promptTooLong": "Prompt is too long (max {{max}} characters)",
       "generationFailed": "Generation failed",
       "invalidDiagram": "Generated an invalid diagram :(. You may also try a different prompt.",
-      "invalidDiagramWithResponse": "Generated an invalid diagram :(. You may also try a different prompt.\n                Response: {{response}}",
+      "fixInMermaid": "Edit Mermaid manually →",
+      "aiRepair": "Regenerate →",
       "requestAborted": "Request aborted",
       "requestFailed": "Request failed"
+    },
+    "rateLimit": {
+      "message": "You’ve hit your daily AI limit on the free plan. Unlock more power with our most advanced AI or come back tomorrow when your limit resets."
     }
   },
   "quickSearch": {

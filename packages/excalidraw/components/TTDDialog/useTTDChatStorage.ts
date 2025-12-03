@@ -11,6 +11,7 @@ export interface SavedChat {
   messages: ChatMessageType[];
   currentPrompt: string;
   generatedResponse: string | null;
+  validMermaidContent: string | null;
   timestamp: number;
 }
 
@@ -20,6 +21,7 @@ export interface UseTTDChatStorageParams {
   ttdGeneration: {
     generatedResponse: string | null;
     prompt: string | null;
+    validMermaidContent: string | null;
   } | null;
 }
 
@@ -104,15 +106,18 @@ export const useTTDChatStorage = ({
       id: ttdSessionId,
       title,
       sessionId: ttdSessionId,
-      messages: chatHistory.messages.map((msg) => ({
-        ...msg,
-        timestamp:
-          msg.timestamp instanceof Date
-            ? msg.timestamp
-            : new Date(msg.timestamp),
-      })),
+      messages: chatHistory.messages
+        .filter((msg) => msg.type !== "system")
+        .map((msg) => ({
+          ...msg,
+          timestamp:
+            msg.timestamp instanceof Date
+              ? msg.timestamp
+              : new Date(msg.timestamp),
+        })),
       currentPrompt: chatHistory.currentPrompt,
       generatedResponse: ttdGeneration?.generatedResponse || null,
+      validMermaidContent: ttdGeneration?.validMermaidContent || null,
       timestamp: messagesChanged
         ? Date.now()
         : existingChat?.timestamp ?? Date.now(),

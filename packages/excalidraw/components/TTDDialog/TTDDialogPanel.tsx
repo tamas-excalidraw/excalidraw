@@ -12,6 +12,7 @@ interface TTDDialogPanelProps {
     label: string;
     action: () => void;
     icon?: ReactNode;
+    variant?: "button" | "link";
   };
   panelActionDisabled?: boolean;
   onTextSubmitInProgess?: boolean;
@@ -50,17 +51,29 @@ export const TTDDialogPanel = ({
             panelActionOrientation === "left" ? "flex-start" : "flex-end",
         }}
       >
-        <Button
-          className="ttd-dialog-panel-button"
-          onSelect={panelAction ? panelAction.action : () => {}}
-          disabled={panelActionDisabled || onTextSubmitInProgess}
-        >
-          <div className={clsx({ invisible: onTextSubmitInProgess })}>
-            {panelAction?.label}
-            {panelAction?.icon && <span>{panelAction.icon}</span>}
-          </div>
-          {onTextSubmitInProgess && <Spinner />}
-        </Button>
+        {panelAction?.variant === "link" ? (
+          <button
+            className="ttd-dialog-panel-action-link"
+            onClick={panelAction.action}
+            disabled={panelActionDisabled || onTextSubmitInProgess}
+            type="button"
+          >
+            {panelAction.label}
+            {panelAction.icon && <span className="ttd-dialog-panel-action-link__icon">{panelAction.icon}</span>}
+          </button>
+        ) : (
+          <Button
+            className="ttd-dialog-panel-button"
+            onSelect={panelAction ? panelAction.action : () => {}}
+            disabled={panelActionDisabled || onTextSubmitInProgess}
+          >
+            <div className={clsx({ invisible: onTextSubmitInProgess })}>
+              {panelAction?.label}
+              {panelAction?.icon && <span>{panelAction.icon}</span>}
+            </div>
+            {onTextSubmitInProgess && <Spinner />}
+          </Button>
+        )}
         {!panelActionDisabled &&
           !onTextSubmitInProgess &&
           renderSubmitShortcut?.()}

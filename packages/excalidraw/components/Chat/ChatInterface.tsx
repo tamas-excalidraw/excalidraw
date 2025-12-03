@@ -13,12 +13,12 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onSendMessage,
   isGenerating,
   rateLimits,
-  bottomRightContent,
   placeholder,
   onAbort,
+  onMermaidTabClick,
+  onAiRepairClick,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView();
@@ -34,11 +34,14 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
       onAbort();
       return;
     }
+
     const trimmedPrompt = currentPrompt.trim();
-    if (trimmedPrompt && !isGenerating) {
-      onSendMessage(trimmedPrompt);
-      onPromptChange("");
+    if (!trimmedPrompt) {
+      return;
     }
+
+    onSendMessage(trimmedPrompt);
+    onPromptChange("");
   };
 
   const handleKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -49,7 +52,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   };
 
   const canSend =
-    currentPrompt.trim().length > 0 &&
+    currentPrompt.trim().length > 3 &&
     !isGenerating &&
     (rateLimits?.rateLimitRemaining ?? 1) > 0;
 
@@ -73,7 +76,13 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           </div>
         ) : (
           messages.map((message) => (
-            <ChatMessage key={message.id} message={message} />
+            <ChatMessage
+              key={message.id}
+              message={message}
+              onMermaidTabClick={onMermaidTabClick}
+              onAiRepairClick={onAiRepairClick}
+              rateLimitRemaining={rateLimits?.rateLimitRemaining}
+            />
           ))
         )}
         <div ref={messagesEndRef} />
@@ -84,7 +93,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
           <div className="chat-interface__input-wrapper">
             <textarea
               autoFocus
-              ref={inputRef}
               className="chat-interface__input"
               value={currentPrompt}
               onChange={handleInputChange}
@@ -112,24 +120,6 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </button>
           </div>
         </div>
-
-        {(rateLimits || bottomRightContent) && (
-          <div className="chat-interface__footer">
-            <div className="chat-interface__footer-left">
-              {rateLimits && (
-                <div className="chat-interface__rate-limit">
-                  {t("chat.rateLimitRemaining", {
-                    count: rateLimits?.rateLimitRemaining,
-                  })}
-                </div>
-              )}
-            </div>
-
-            <div className="chat-interface__footer-right">
-              {bottomRightContent}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

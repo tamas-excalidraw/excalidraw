@@ -33,13 +33,17 @@ $verticalBreakpoint: 861px;
       max-height: 100%;
 
       @media screen and (min-width: $verticalBreakpoint) {
-        max-height: 750px;
+        max-height: min(950px, calc(100vh - 4rem));
         height: 100%;
       }
     }
 
     .Dialog__content {
       flex: 1 1 auto;
+
+      @media screen and (max-width: $verticalBreakpoint) {
+        margin-top: 0 !important;
+      }
     }
   }
 
@@ -115,6 +119,10 @@ $verticalBreakpoint: 861px;
     border-bottom: 1px solid var(--color-surface-high);
     margin-bottom: 2.5rem;
     padding-inline: 2.5rem;
+
+    @media screen and (max-width: $verticalBreakpoint) {
+      margin-bottom: 1rem;
+    }
   }
 
   .ttd-dialog-content {
@@ -127,21 +135,28 @@ $verticalBreakpoint: 861px;
     &[hidden] {
       display: none;
     }
+
+    @media screen and (max-width: $verticalBreakpoint) {
+      padding-inline: 1rem;
+      flex-grow: 1;
+    }
   }
 
   .ttd-dialog-panel__header .dropdown-menu {
+    z-index: 2;
     margin: 0;
     right: 0;
     left: auto;
     min-width: 280px;
 
-    .dropdown-menu-container {
-      padding: 0.5rem 0;
+    .dropdown-menu-container.dropdown-menu-container {
+      padding-inline: 8px !important;
+      padding-top: 8px;
+      padding-bottom: 8px;
       max-height: 400px;
       overflow-y: auto;
       box-shadow: var(--shadow-island);
       border-radius: var(--border-radius-lg);
-      padding: calc(var(--padding) * var(--space-factor));
     }
   }
 
@@ -150,18 +165,14 @@ $verticalBreakpoint: 861px;
     grid-template-columns: 1fr 1fr;
     height: 100%;
 
-    &--chat-only {
-      grid-template-columns: 1fr;
-    }
-
     &--split {
       gap: 2rem;
       min-width: 0;
 
       @media screen and (max-width: $verticalBreakpoint) {
         grid-template-columns: 1fr;
-        grid-template-rows: auto auto;
-        grid-row-gap: 2rem;
+        grid-template-rows: 1fr auto;
+        grid-row-gap: 0;
       }
 
       .ttd-dialog-chat-panel {
@@ -177,14 +188,34 @@ $verticalBreakpoint: 861px;
 
       .ttd-dialog-preview-panel {
         min-width: 0;
-        opacity: 1;
         overflow: hidden;
 
         @media screen and (max-width: $verticalBreakpoint) {
           width: 100%;
           flex: 0 0 auto;
           max-width: 100%;
-          height: 300px;
+          min-height: 280px;
+          height: unset;
+        }
+      }
+    }
+
+    &--chat-only {
+      grid-template-columns: 1fr;
+
+      .ttd-dialog-chat-panel {
+        @media screen and (max-width: $verticalBreakpoint) {
+          height: unset;
+        }
+      }
+
+      @media screen and (max-width: $verticalBreakpoint) {
+        .chat-interface {
+          max-height: 100%;
+
+          &__messages {
+            max-height: unset;
+          }
         }
       }
     }
@@ -228,7 +259,6 @@ $verticalBreakpoint: 861px;
     height: 400px;
     width: auto;
     max-width: 100%;
-    max-height: 472px;
 
     @media screen and (max-width: $verticalBreakpoint) {
       width: 100%;
@@ -309,13 +339,18 @@ $verticalBreakpoint: 861px;
     width: 100%;
     height: 100%;
     min-width: 0;
-    overflow: hidden;
+    align-items: stretch;
   }
 
   .ttd-dialog-panel {
     display: flex;
     flex-direction: column;
     width: 100%;
+    height: 100%;
+
+    @media screen and (max-width: $verticalBreakpoint) {
+      height: 50%;
+    }
 
     &__header {
       display: flex;
@@ -346,23 +381,24 @@ $verticalBreakpoint: 861px;
       gap: 5px;
     }
 
+    &__header-right {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    &__rate-limit {
+      font-size: 0.75rem;
+      color: var(--color-danger);
+      font-weight: 500;
+      white-space: nowrap;
+    }
+
     &__menu-wrapper {
       position: relative;
       .dropdown-menu {
         margin-top: 0.5rem;
         right: 3px;
-      }
-    }
-
-    &:first-child {
-      .ttd-dialog-panel-button-container:not(.invisible) {
-        margin-bottom: 4rem;
-      }
-    }
-
-    @media screen and (min-width: $verticalBreakpoint) {
-      .ttd-dialog-panel-button-container:not(.invisible) {
-        margin-bottom: 0.5rem !important;
       }
     }
 
@@ -379,7 +415,6 @@ $verticalBreakpoint: 861px;
 
       @media screen and (max-width: $verticalBreakpoint) {
         width: auto;
-        height: 44px;
       }
     }
   }
@@ -392,14 +427,15 @@ $verticalBreakpoint: 861px;
     margin-top: 1rem;
     margin-bottom: 0.5rem;
 
-    &.invisible {
-      .ttd-dialog-panel-button {
-        display: none;
+    @media screen and (max-width: $verticalBreakpoint) {
+      margin-top: 0.5rem;
+    }
 
-        @media screen and (min-width: $verticalBreakpoint) {
-          display: block;
-          visibility: hidden;
-        }
+    &.invisible {
+      visibility: hidden;
+
+      @media screen and (max-width: $verticalBreakpoint) {
+        display: none;
       }
     }
   }
@@ -483,16 +519,43 @@ $verticalBreakpoint: 861px;
     }
   }
 
-  .dropdown-menu-item-custom.ttd-chat-menu-item {
+  .ttd-dialog-panel-action-link {
     display: flex;
     align-items: center;
+    gap: 0.25rem;
+    background: none;
+    border: none;
+    color: var(--color-primary);
+    font-weight: 500;
+    font-family: inherit;
+    height: 40px;
+
+    &__icon {
+      display: inline-flex;
+      align-items: center;
+
+      svg {
+        width: 12px;
+        height: 12px;
+      }
+    }
+
+    @media screen and (max-width: $verticalBreakpoint) {
+      height: unset;
+    }
+  }
+
+  .dropdown-menu-item-custom.ttd-chat-menu-item {
+    display: flex;
+    width: unset;
+    align-items: center;
     justify-content: space-between;
-    width: 100%;
-    padding: 0.5rem 0.75rem;
+    padding: 0.2rem 0.5rem;
     cursor: pointer;
     position: relative;
     margin-top: 0;
     border: 1px solid transparent;
+    border-radius: var(--border-radius-md);
 
     &:hover {
       background-color: var(--button-hover-bg);
@@ -506,7 +569,7 @@ $verticalBreakpoint: 861px;
       background-color: var(--color-surface-primary-container);
     }
 
-    &__title {
+    .ttd-chat-menu-item__title {
       flex: 1;
       overflow: hidden;
       text-overflow: ellipsis;
@@ -517,7 +580,6 @@ $verticalBreakpoint: 861px;
       border: none;
       padding: 0.25rem;
       cursor: pointer;
-      transition: opacity 0.2s ease, visibility 0.2s ease;
       flex-shrink: 0;
       margin-left: 0.5rem;
       display: flex;
@@ -529,10 +591,7 @@ $verticalBreakpoint: 861px;
         width: 16px;
         height: 16px;
       }
-
-      &:hover {
-        opacity: 1 !important;
-      }
     }
   }
+
 }

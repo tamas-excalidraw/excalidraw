@@ -5,18 +5,13 @@ export interface ChatMessage {
   timestamp: Date;
   isGenerating?: boolean;
   error?: string;
+  errorDetails?: string;
+  errorType?: "parse" | "network" | "other";
 }
 
 export interface ChatHistory {
   messages: ChatMessage[];
   currentPrompt: string;
-}
-
-export interface ChatHistorySnapshot {
-  messages: ChatMessage[];
-  currentPrompt: string;
-  generatedResponse: string | null;
-  timestamp: Date;
 }
 
 export interface ChatInterfaceProps {
@@ -31,10 +26,11 @@ export interface ChatInterfaceProps {
   } | null;
   onViewAsMermaid?: () => void;
   generatedResponse?: string | null;
-  bottomRightContent?: React.ReactNode;
   placeholder: {
     title: string;
     description: string;
   };
   onAbort?: () => void;
+  onMermaidTabClick?: (message: ChatMessage) => void;
+  onAiRepairClick?: (message: ChatMessage) => void;
 }
