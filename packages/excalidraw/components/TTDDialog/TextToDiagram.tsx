@@ -33,6 +33,7 @@ import type { ChatMessageType } from "../Chat";
 import type { SavedChat } from "./useTTDChatStorage";
 import type { BinaryFiles } from "../../types";
 import { isFiniteNumber } from "@excalidraw/math";
+import mockChunks from "./mock";
 import clsx from "clsx";
 
 const MIN_PROMPT_LENGTH = 3;
@@ -221,8 +222,40 @@ export const TextToDiagram = ({
 
       isRenderingRef.current = false;
     },
-    [mermaidToExcalidrawLib, setTtdGeneration],
+    [mermaidToExcalidrawLib, setTtdGeneration, someRandomDivRef],
   );
+
+  const onReplay = useCallback(async () => {
+    if (onTextSubmitInProgess || mockChunks.length === 0) {
+      return;
+    }
+
+    accumulatedContentRef.current = "";
+    setOnTextSubmitInProgess(true);
+    setShowPreview(true);
+
+    updateLastMessage({ content: "", isGenerating: true }, "assistant");
+
+    for (const chunk of mockChunks) {
+      updateAssistantContent(updateLastMessage, chunk);
+      accumulatedContentRef.current += chunk;
+      renderMermaid(accumulatedContentRef.current);
+
+      const delay = Math.floor(Math.random() * 5) + 1;
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    updateLastMessage({ isGenerating: false }, "assistant");
+    setOnTextSubmitInProgess(false);
+  }, [
+    onTextSubmitInProgess,
+    chatHistory.messages,
+    setChatHistory,
+    updateLastMessage,
+    updateAssistantContent,
+    renderMermaid,
+    setOnTextSubmitInProgess,
+  ]);
 
   useEffect(() => {
     if (
@@ -738,26 +771,41 @@ export const TextToDiagram = ({
           }}
         />
       </TTDDialogPanel>
-      {showPreview && (
-        <TTDDialogPanel
-          label={t("chat.preview")}
-          panelActionOrientation="right"
-          panelAction={{
-            action: () => {
-              insertToEditor({ app, data });
-            },
-            label: t("chat.insert"),
-            icon: ArrowRightIcon,
-          }}
-          className="ttd-dialog-preview-panel"
-        >
-          <TTDDialogOutput
-            canvasRef={someRandomDivRef}
-            error={error}
-            loaded={mermaidToExcalidrawLib.loaded}
-          />
-        </TTDDialogPanel>
-      )}
+      <TTDDialogPanel
+        label={t("chat.preview")}
+        panelActionOrientation="right"
+        panelAction={
+          showPreview
+            ? {
+                action: () => {
+                  insertToEditor({ app, data });
+                },
+                label: t("chat.insert"),
+                icon: ArrowRightIcon,
+              }
+            : undefined
+        }
+        renderTopRight={() => (
+          <button
+            onClick={onReplay}
+            disabled={onTextSubmitInProgess || mockChunks.length === 0}
+            className="ttd-replay-button"
+            type="button"
+            title="Replay"
+          >
+            Replay
+          </button>
+        )}
+        className={`ttd-dialog-preview-panel ${
+          showPreview ? "" : "ttd-dialog-preview-panel--hidden"
+        }`}
+      >
+        <TTDDialogOutput
+          canvasRef={someRandomDivRef}
+          error={error}
+          loaded={mermaidToExcalidrawLib.loaded}
+        />
+      </TTDDialogPanel>
     </div>
   );
 };
