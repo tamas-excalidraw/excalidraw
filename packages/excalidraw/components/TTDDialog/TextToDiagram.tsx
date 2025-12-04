@@ -204,6 +204,15 @@ export const TextToDiagram = ({
 
       pendingRenderContentRef.current = null;
 
+      // quick hack for letting the GC cleanup between renders
+      await new Promise<void>((resolve) => {
+        if (typeof requestIdleCallback !== "undefined") {
+          requestIdleCallback(() => resolve(), { timeout: 5 });
+        } else {
+          setTimeout(() => resolve(), 0);
+        }
+      });
+
       const result = await convertMermaidToExcalidraw({
         canvasRef: someRandomDivRef,
         data,
