@@ -109,6 +109,7 @@ export const TTDDialogBase = withInternalFallback(
           <TTDDialogTab className="ttd-dialog-content" tab="mermaid">
             <MermaidToExcalidraw
               mermaidToExcalidrawLib={mermaidToExcalidrawLib}
+              isActive={tab === "mermaid"}
             />
           </TTDDialogTab>
         </TTDDialogTabs>

@@ -33,8 +33,10 @@ const debouncedSaveMermaidDefinition = debounce(saveMermaidDataToStorage, 300);
 
 const MermaidToExcalidraw = ({
   mermaidToExcalidrawLib,
+  isActive,
 }: {
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
+  isActive?: boolean;
 }) => {
   const [text, setText] = useState(
     () =>
@@ -74,9 +76,11 @@ const MermaidToExcalidraw = ({
       }
     };
 
-    doRender();
-    debouncedSaveMermaidDefinition(deferredText);
-  }, [deferredText, mermaidToExcalidrawLib]);
+    if (isActive) {
+      doRender();
+      debouncedSaveMermaidDefinition(deferredText);
+    }
+  }, [deferredText, mermaidToExcalidrawLib, isActive]);
 
   useEffect(
     () => () => {

@@ -23,7 +23,6 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
 
-  // Only show action buttons for Mermaid parsing errors, not network errors
   const isMermaidError = message.errorType === "parse";
 
   if (message.type === "system") {
