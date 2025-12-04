@@ -50,7 +50,6 @@ interface ConvertMermaidToExcalidrawFormatProps {
     elements: readonly NonDeletedExcalidrawElement[];
     files: BinaryFiles | null;
   }>;
-  signal?: AbortSignal;
 }
 
 export type ConvertMermaidResult =
@@ -63,7 +62,6 @@ export const convertMermaidToExcalidraw = async ({
   mermaidDefinition,
   setError,
   data,
-  signal,
 }: ConvertMermaidToExcalidrawFormatProps): Promise<ConvertMermaidResult> => {
   const canvasNode = canvasRef.current;
   const parent = canvasNode?.parentElement;
@@ -74,10 +72,6 @@ export const convertMermaidToExcalidraw = async ({
 
   if (!mermaidDefinition) {
     resetPreview({ canvasRef, setError });
-    return { success: false };
-  }
-
-  if (signal?.aborted) {
     return { success: false };
   }
 
@@ -97,10 +91,6 @@ export const convertMermaidToExcalidraw = async ({
       return { success: false, error: err as Error };
     }
 
-    if (!ret || signal?.aborted) {
-      return { success: false };
-    }
-
     const { elements, files } = ret;
     setError(null);
 
@@ -111,10 +101,6 @@ export const convertMermaidToExcalidraw = async ({
       files,
     };
 
-    if (signal?.aborted) {
-      return { success: false };
-    }
-
     const canvas = await exportToCanvas({
       elements: data.current.elements,
       files: data.current.files,
@@ -124,18 +110,10 @@ export const convertMermaidToExcalidraw = async ({
         window.devicePixelRatio,
     });
 
-    if (signal?.aborted) {
-      return { success: false };
-    }
-
     parent.style.background = "var(--default-bg-color)";
     canvasNode.replaceChildren(canvas);
     return { success: true };
   } catch (err: any) {
-    // Don't return error if aborted - it's expected and should be swallowed
-    if (signal?.aborted) {
-      return { success: false };
-    }
     parent.style.background = "var(--default-bg-color)";
     if (mermaidDefinition) {
       setError(err);

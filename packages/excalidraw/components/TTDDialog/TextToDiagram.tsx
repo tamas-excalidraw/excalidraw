@@ -92,7 +92,8 @@ export const TextToDiagram = ({
   );
   const accumulatedContentRef = useRef("");
   const streamingAbortControllerRef = useRef<AbortController | null>(null);
-  const mermaidRenderAbortControllerRef = useRef<AbortController | null>(null);
+  const isRenderingRef = useRef<boolean>(false);
+  const pendingRenderContentRef = useRef<string | null>(null);
 
   const data = useRef<{
     elements: readonly NonDeletedExcalidrawElement[];
@@ -193,54 +194,49 @@ export const TextToDiagram = ({
         return;
       }
 
-      if (mermaidRenderAbortControllerRef.current) {
-        mermaidRenderAbortControllerRef.current.abort();
-      }
-
-      const abortController = new AbortController();
-      mermaidRenderAbortControllerRef.current = abortController;
-
-      try {
-        const result = await convertMermaidToExcalidraw({
-          canvasRef: someRandomDivRef,
-          data,
-          mermaidToExcalidrawLib,
-          setError,
-          mermaidDefinition,
-          signal: abortController.signal,
-        });
-
-        if (result.success) {
-          setTtdGeneration((s) => ({
-            generatedResponse: s?.generatedResponse ?? null,
-            prompt: s?.prompt ?? null,
-            validMermaidContent: mermaidDefinition,
-          }));
-          return;
-        }
-        return;
-      } catch (err) {
+      if (isRenderingRef.current) {
+        pendingRenderContentRef.current = mermaidDefinition;
         return;
       }
+
+      isRenderingRef.current = true;
+
+      pendingRenderContentRef.current = null;
+
+      const result = await convertMermaidToExcalidraw({
+        canvasRef: someRandomDivRef,
+        data,
+        mermaidToExcalidrawLib,
+        setError,
+        mermaidDefinition,
+      });
+
+      if (result.success) {
+        setTtdGeneration((s) => ({
+          generatedResponse: s?.generatedResponse ?? null,
+          prompt: s?.prompt ?? null,
+          validMermaidContent: mermaidDefinition,
+        }));
+      }
+
+      isRenderingRef.current = false;
     },
     [mermaidToExcalidrawLib, setTtdGeneration],
   );
 
   useEffect(() => {
-    if (mermaidToExcalidrawLib.loaded && !onTextSubmitInProgess) {
+    if (
+      mermaidToExcalidrawLib.loaded &&
+      !onTextSubmitInProgess &&
+      !isRenderingRef.current
+    ) {
       const contentToRender =
         ttdGeneration?.validMermaidContent || ttdGeneration?.generatedResponse;
       if (contentToRender) {
         renderMermaid(contentToRender);
       }
     }
-  }, [
-    mermaidToExcalidrawLib.loaded,
-    ttdGeneration?.validMermaidContent,
-    ttdGeneration?.generatedResponse,
-    renderMermaid,
-    onTextSubmitInProgess,
-  ]);
+  }, [mermaidToExcalidrawLib.loaded, renderMermaid, onTextSubmitInProgess]);
 
   // Add rate limit message when chat opens if limit is zero and message doesn't exist
   useEffect(() => {
@@ -414,6 +410,9 @@ export const TextToDiagram = ({
       saveCurrentChat();
 
       await parseMermaidToExcalidraw(generatedResponse ?? "");
+
+      // do a final render, just to be sure
+      renderMermaid(accumulatedContentRef.current);
       trackEvent("ai", "mermaid parse success", "ttd");
     } catch (error: unknown) {
       console.log("### err", error, (error as Error).message);
