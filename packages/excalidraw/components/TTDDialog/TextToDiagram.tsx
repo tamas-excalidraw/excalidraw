@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback } from "react";
+import { useEffect, useRef, useState, useCallback, useMemo } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
@@ -35,6 +35,7 @@ import type { BinaryFiles } from "../../types";
 import { isFiniteNumber } from "@excalidraw/math";
 import mockChunks from "./mock";
 import clsx from "clsx";
+import throttle from "lodash.throttle";
 
 const MIN_PROMPT_LENGTH = 3;
 const MAX_PROMPT_LENGTH = 1000;
@@ -191,6 +192,7 @@ export const TextToDiagram = ({
 
   const renderMermaid = useCallback(
     async (mermaidDefinition: string) => {
+      console.log("### renderMermaid called", new Date().toISOString());
       if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
         return;
       }
@@ -233,6 +235,24 @@ export const TextToDiagram = ({
     },
     [mermaidToExcalidrawLib, setTtdGeneration, someRandomDivRef],
   );
+
+  const throttledRenderMermaid = useMemo(
+    () =>
+      throttle(
+        (mermaidDefinition: string) => {
+          renderMermaid(mermaidDefinition);
+        },
+        100,
+        { leading: true, trailing: true },
+      ),
+    [renderMermaid],
+  );
+
+  useEffect(() => {
+    return () => {
+      throttledRenderMermaid?.cancel();
+    };
+  }, [throttledRenderMermaid]);
 
   const onReplay = useCallback(async () => {
     if (onTextSubmitInProgess || mockChunks.length === 0) {
@@ -368,10 +388,12 @@ export const TextToDiagram = ({
           onChunk: (chunk: string) => {
             updateAssistantContent(updateLastMessage, chunk);
             accumulatedContentRef.current += chunk;
-            renderMermaid(accumulatedContentRef.current);
+            throttledRenderMermaid(accumulatedContentRef.current);
           },
           signal: abortController.signal,
         });
+
+      throttledRenderMermaid.flush();
 
       if (typeof generatedResponse === "string") {
         setTtdGeneration((s) => ({
