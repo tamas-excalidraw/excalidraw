@@ -242,7 +242,7 @@ export const TextToDiagram = ({
         (mermaidDefinition: string) => {
           renderMermaid(mermaidDefinition);
         },
-        100,
+        350,
         { leading: true, trailing: true },
       ),
     [renderMermaid],
