@@ -79,6 +79,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           {message.error ? (
             <div className="chat-message__error">
               {message.content}
+              <p>{t("chat.errors.invalidDiagram")}</p>
               {isMermaidError && (
                 <div className="chat-message__error-actions">
                   {onMermaidTabClick && (

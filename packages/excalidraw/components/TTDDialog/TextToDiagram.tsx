@@ -192,7 +192,6 @@ export const TextToDiagram = ({
 
   const renderMermaid = useCallback(
     async (mermaidDefinition: string) => {
-      console.log("### renderMermaid called", new Date().toISOString());
       if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
         return;
       }
@@ -296,7 +295,7 @@ export const TextToDiagram = ({
     for (const chunk of mockChunks) {
       updateAssistantContent(updateLastMessage, chunk);
       accumulatedContentRef.current += chunk;
-      renderMermaid(accumulatedContentRef.current);
+      throttledRenderMermaid(accumulatedContentRef.current);
 
       const delay = Math.floor(Math.random() * 5) + 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
@@ -549,7 +548,6 @@ export const TextToDiagram = ({
       renderMermaid(accumulatedContentRef.current);
       trackEvent("ai", "mermaid parse success", "ttd");
     } catch (error: unknown) {
-      console.log("### err", error, (error as Error).message);
       handleError(error as Error, "parse");
     } finally {
       setOnTextSubmitInProgess(false);
@@ -563,13 +561,11 @@ export const TextToDiagram = ({
 
       if (errorType === "parse") {
         trackEvent("ai", "mermaid parse failed", "ttd");
-        message = t("chat.errors.invalidDiagram");
         updateLastMessage(
           {
             isGenerating: false,
             error: error.message,
             errorType: "parse",
-            content: message,
           },
           "assistant",
         );
