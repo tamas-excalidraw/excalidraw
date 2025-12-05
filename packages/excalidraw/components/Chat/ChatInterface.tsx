@@ -18,6 +18,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onMermaidTabClick,
   onAiRepairClick,
   onDeleteMessage,
+  onInsertMessage,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -83,6 +84,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onMermaidTabClick={onMermaidTabClick}
               onAiRepairClick={onAiRepairClick}
               onDeleteMessage={onDeleteMessage}
+              onInsertMessage={onInsertMessage}
               rateLimitRemaining={rateLimits?.rateLimitRemaining}
             />
           ))

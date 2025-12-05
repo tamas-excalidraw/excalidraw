@@ -190,7 +190,9 @@ $verticalBreakpoint: 861px;
     }
 
     &--assistant {
+      flex-direction: column;
       justify-content: flex-start;
+      align-items: flex-start;
 
       .chat-message__content {
         background: var(--color-surface-low);
@@ -243,25 +245,37 @@ $verticalBreakpoint: 861px;
       font-size: 0.625rem;
     }
 
-    &__delete {
+    &__actions {
       display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    &__action {
+      display: inline-flex;
       align-items: center;
       justify-content: center;
       background: none;
       border: none;
       cursor: pointer;
-      padding: 0.25rem;
-      color: var(--color-gray-40);
+      padding: 0.25rem 0;
+      color: var(--color-gray-60);
       transition: color 0.2s ease;
       flex-shrink: 0;
 
       &:hover {
-        color: var(--color-danger);
+        color: var(--color-primary);
       }
 
       svg {
         width: 14px;
         height: 14px;
+      }
+    }
+
+    &__action--danger {
+      &:hover {
+        color: var(--color-danger);
       }
     }
 

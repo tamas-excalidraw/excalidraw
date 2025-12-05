@@ -236,6 +236,34 @@ export const TextToDiagram = ({
     [mermaidToExcalidrawLib, setTtdGeneration, someRandomDivRef],
   );
 
+  const handleAbortedGeneration = useCallback(() => {
+    const currentContent = accumulatedContentRef.current;
+    if (currentContent) {
+      setTtdGeneration((s) => ({
+        generatedResponse: currentContent,
+        prompt: s?.prompt ?? null,
+        validMermaidContent: s?.validMermaidContent ?? null,
+      }));
+      updateLastMessage(
+        {
+          isGenerating: false,
+          content: currentContent,
+        },
+        "assistant",
+      );
+      if (currentContent.trim()) {
+        renderMermaid(currentContent);
+      }
+    } else {
+      updateLastMessage(
+        {
+          isGenerating: false,
+        },
+        "assistant",
+      );
+    }
+  }, [setTtdGeneration, updateLastMessage, renderMermaid]);
+
   const throttledRenderMermaid = useMemo(
     () =>
       throttle(
@@ -318,29 +346,92 @@ export const TextToDiagram = ({
     }
   }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage, t]);
 
+  const validatePrompt = useCallback(
+    (prompt: string): boolean => {
+      if (
+        prompt.length > MAX_PROMPT_LENGTH ||
+        prompt.length < MIN_PROMPT_LENGTH ||
+        onTextSubmitInProgess ||
+        rateLimits?.rateLimitRemaining === 0
+      ) {
+        if (prompt.length < MIN_PROMPT_LENGTH) {
+          setError(
+            new Error(
+              t("chat.errors.promptTooShort", { min: MIN_PROMPT_LENGTH }),
+            ),
+          );
+        }
+        if (prompt.length > MAX_PROMPT_LENGTH) {
+          setError(
+            new Error(
+              t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH }),
+            ),
+          );
+        }
+
+        return false;
+      }
+      return true;
+    },
+    [onTextSubmitInProgess, rateLimits?.rateLimitRemaining, t],
+  );
+
+  const handleRateLimits = useCallback(
+    (
+      rateLimit: number | null | undefined,
+      rateLimitRemaining: number | null | undefined,
+    ) => {
+      if (isFiniteNumber(rateLimit) && isFiniteNumber(rateLimitRemaining)) {
+        const previousRemaining = rateLimits?.rateLimitRemaining ?? null;
+        setRateLimits({ rateLimit, rateLimitRemaining });
+
+        if (
+          rateLimitRemaining === 0 &&
+          previousRemaining !== null &&
+          previousRemaining > 0
+        ) {
+          updateLastMessage(
+            {
+              isGenerating: false,
+            },
+            "assistant",
+          );
+          addMessage({
+            type: "system",
+            content: t("chat.rateLimit.message"),
+          });
+        }
+      }
+    },
+    [
+      rateLimits?.rateLimitRemaining,
+      setRateLimits,
+      updateLastMessage,
+      addMessage,
+      t,
+    ],
+  );
+
+  const removeLastErrorMessage = useCallback(() => {
+    setChatHistory((prev) => {
+      const lastErrorIndex = (prev.messages ?? []).findIndex(
+        (msg) => msg.type === "assistant" && msg.error,
+      );
+      if (lastErrorIndex !== -1) {
+        return {
+          ...prev,
+          messages: prev.messages.filter((_, i) => i !== lastErrorIndex),
+        };
+      }
+      return prev;
+    });
+  }, [setChatHistory]);
+
   const onGenerate = async (
     promptWithContext: string,
     isRepairFlow: boolean = false,
   ) => {
-    if (
-      promptWithContext.length > MAX_PROMPT_LENGTH ||
-      promptWithContext.length < MIN_PROMPT_LENGTH ||
-      onTextSubmitInProgess ||
-      rateLimits?.rateLimitRemaining === 0
-    ) {
-      if (promptWithContext.length < MIN_PROMPT_LENGTH) {
-        setError(
-          new Error(
-            t("chat.errors.promptTooShort", { min: MIN_PROMPT_LENGTH }),
-          ),
-        );
-      }
-      if (promptWithContext.length > MAX_PROMPT_LENGTH) {
-        setError(
-          new Error(t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH })),
-        );
-      }
-
+    if (!validatePrompt(promptWithContext)) {
       return;
     }
 
@@ -405,29 +496,19 @@ export const TextToDiagram = ({
         accumulatedContentRef.current = generatedResponse;
       }
 
-      if (isFiniteNumber(rateLimit) && isFiniteNumber(rateLimitRemaining)) {
-        const previousRemaining = rateLimits?.rateLimitRemaining ?? null;
-        setRateLimits({ rateLimit, rateLimitRemaining });
-
-        if (
-          rateLimitRemaining === 0 &&
-          previousRemaining !== null &&
-          previousRemaining > 0
-        ) {
-          updateLastMessage(
-            {
-              isGenerating: false,
-            },
-            "assistant",
-          );
-          addMessage({
-            type: "system",
-            content: t("chat.rateLimit.message"),
-          });
-        }
-      }
+      handleRateLimits(rateLimit, rateLimitRemaining);
 
       if (error) {
+        const isAborted =
+          error.name === "AbortError" ||
+          error.message === "Aborted" ||
+          abortController.signal.aborted;
+
+        if (isAborted) {
+          handleAbortedGeneration();
+          return;
+        }
+
         if (
           error.message ===
           "Too many requests today, please try again tomorrow!"
@@ -457,18 +538,7 @@ export const TextToDiagram = ({
       );
 
       if (isRepairFlow) {
-        setChatHistory((prev) => {
-          const lastErrorIndex = (prev.messages ?? []).findIndex(
-            (msg) => msg.type === "assistant" && msg.error,
-          );
-          if (lastErrorIndex !== -1) {
-            return {
-              ...prev,
-              messages: prev.messages.filter((_, i) => i !== lastErrorIndex),
-            };
-          }
-          return prev;
-        });
+        removeLastErrorMessage();
       }
 
       saveCurrentChat();
@@ -522,6 +592,51 @@ export const TextToDiagram = ({
       });
     }
   };
+
+  const handleMermaidTabClick = useCallback(
+    (message: ChatMessageType) => {
+      const mermaidContent = message.content || "";
+      if (mermaidContent) {
+        saveMermaidDataToStorage(mermaidContent);
+        setAppState({
+          openDialog: { name: "ttd", tab: "mermaid" },
+        });
+      }
+    },
+    [setAppState],
+  );
+
+  const handleInsertMessage = useCallback(
+    async (message: ChatMessageType) => {
+      const mermaidContent = message.content || "";
+      if (!mermaidContent.trim() || !mermaidToExcalidrawLib.loaded) {
+        return;
+      }
+
+      const tempDataRef = useRef<{
+        elements: readonly NonDeletedExcalidrawElement[];
+        files: BinaryFiles | null;
+      }>({ elements: [], files: null });
+
+      const result = await convertMermaidToExcalidraw({
+        canvasRef: someRandomDivRef,
+        data: tempDataRef,
+        mermaidToExcalidrawLib,
+        setError,
+        mermaidDefinition: mermaidContent,
+      });
+
+      if (result.success) {
+        insertToEditor({
+          app,
+          data: tempDataRef,
+          text: mermaidContent,
+          shouldSaveMermaidDataToStorage: true,
+        });
+      }
+    },
+    [app, mermaidToExcalidrawLib, someRandomDivRef, setError],
+  );
 
   const handleAiRepairClick = useCallback(
     async (message: ChatMessageType) => {
@@ -793,9 +908,10 @@ export const TextToDiagram = ({
           isGenerating={onTextSubmitInProgess}
           generatedResponse={ttdGeneration?.generatedResponse}
           onAbort={handleAbort}
-          onMermaidTabClick={onViewAsMermaid}
+          onMermaidTabClick={handleMermaidTabClick}
           onAiRepairClick={handleAiRepairClick}
           onDeleteMessage={handleDeleteMessage}
+          onInsertMessage={handleInsertMessage}
           placeholder={{
             title: t("chat.placeholder.title"),
             description: t("chat.placeholder.description"),

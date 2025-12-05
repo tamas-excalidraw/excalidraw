@@ -2,13 +2,14 @@ import React from "react";
 import { ChatMessage as ChatMessageType } from "./types";
 import { t } from "../../i18n";
 import { FilledButton } from "../FilledButton";
-import { TrashIcon } from "../icons";
+import { TrashIcon, mermaidLogoIcon, TableExportIcon } from "../icons";
 
 interface ChatMessageProps {
   message: ChatMessageType;
   onMermaidTabClick?: (message: ChatMessageType) => void;
   onAiRepairClick?: (message: ChatMessageType) => void;
   onDeleteMessage?: (messageId: string) => void;
+  onInsertMessage?: (message: ChatMessageType) => void;
   rateLimitRemaining?: number;
 }
 
@@ -17,6 +18,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onMermaidTabClick,
   onAiRepairClick,
   onDeleteMessage,
+  onInsertMessage,
   rateLimitRemaining,
 }) => {
   const formatTime = (date: Date) => {
@@ -111,16 +113,42 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
         </div>
       </div>
-      {message.type === "assistant" && onDeleteMessage && (
-        <button
-          className="chat-message__delete"
-          onClick={() => onDeleteMessage(message.id)}
-          type="button"
-          aria-label={t("chat.deleteMessage")}
-          title={t("chat.deleteMessage")}
-        >
-          {TrashIcon}
-        </button>
+      {message.type === "assistant" && (
+        <div className="chat-message__actions">
+          {!message.error && onInsertMessage && (
+            <button
+              className="chat-message__action"
+              onClick={() => onInsertMessage(message)}
+              type="button"
+              aria-label={t("chat.insert")}
+              title={t("chat.insert")}
+            >
+              {TableExportIcon}
+            </button>
+          )}
+          {onMermaidTabClick && (
+            <button
+              className="chat-message__action"
+              onClick={() => onMermaidTabClick(message)}
+              type="button"
+              aria-label={t("chat.viewAsMermaid")}
+              title={t("chat.viewAsMermaid")}
+            >
+              {mermaidLogoIcon}
+            </button>
+          )}
+          {onDeleteMessage && (
+            <button
+              className="chat-message__action chat-message__action--danger"
+              onClick={() => onDeleteMessage(message.id)}
+              type="button"
+              aria-label={t("chat.deleteMessage")}
+              title={t("chat.deleteMessage")}
+            >
+              {TrashIcon}
+            </button>
+          )}
+        </div>
       )}
     </div>
   );
