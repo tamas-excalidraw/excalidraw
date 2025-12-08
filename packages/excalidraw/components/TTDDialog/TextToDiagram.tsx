@@ -192,28 +192,19 @@ export const TextToDiagram = ({
   );
 
   const renderMermaid = useCallback(
-    async (mermaidDefinition: string) => {
+    async (mermaidDefinition: string): Promise<boolean> => {
       if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
-        return;
+        return false;
       }
 
       if (isRenderingRef.current) {
         pendingRenderContentRef.current = mermaidDefinition;
-        return;
+        return false;
       }
 
       isRenderingRef.current = true;
 
       pendingRenderContentRef.current = null;
-
-      // quick hack for letting the GC cleanup between renders
-      await new Promise<void>((resolve) => {
-        if (typeof requestIdleCallback !== "undefined") {
-          requestIdleCallback(() => resolve(), { timeout: 5 });
-        } else {
-          setTimeout(() => resolve(), 0);
-        }
-      });
 
       const startTime = performance.now();
       const result = await convertMermaidToExcalidraw({
@@ -236,6 +227,7 @@ export const TextToDiagram = ({
       }
 
       isRenderingRef.current = false;
+      return result.success;
     },
     [mermaidToExcalidrawLib, setTtdGeneration, someRandomDivRef],
   );
@@ -268,60 +260,42 @@ export const TextToDiagram = ({
     }
   }, [setTtdGeneration, updateLastMessage, renderMermaid]);
 
-  const calculateThrottleDelay = useCallback(() => {
-    const runtime = lastRenderRuntimeRef.current;
-
-    if (!runtime || runtime < 300) {
-      return 300;
-    }
-
-    if (runtime < 800) {
-      return Math.ceil(runtime * 1.5);
-    }
-
-    if (runtime < 1200) {
-      return Math.ceil(runtime * 2);
-    }
-
-    return Math.ceil(runtime * 3);
-  }, []);
-
-  const throttledRenderMermaidRef = useRef<ReturnType<typeof throttle> | null>(
-    null,
-  );
-  const lastThrottleDelayRef = useRef(0);
+  const lastRenderFailedRef = useRef(false);
 
   const throttledRenderMermaid = useMemo(() => {
-    const fn = (mermaidDefinition: string) => {
-      const delay = calculateThrottleDelay();
+    const throttled = throttle(
+      async (content: string) => {
+        const success = await renderMermaid(content);
+        console.log("### success", success);
+        lastRenderFailedRef.current = !success;
+      },
+      3000,
+      { leading: true, trailing: true },
+    );
 
-      // TODO: Quick hack to not recreate the throttled function on every render
-      if (
-        !throttledRenderMermaidRef.current ||
-        Math.abs(delay - lastThrottleDelayRef.current) > 50
-      ) {
-        throttledRenderMermaidRef.current = throttle(
-          (content: string) => {
-            renderMermaid(content);
-          },
-          delay,
-          { leading: true, trailing: true },
-        );
-        lastThrottleDelayRef.current = delay;
+    const fn = async (content: string) => {
+      console.log(
+        "### lastRenderFailedRef.current",
+        lastRenderFailedRef.current,
+      );
+      if (lastRenderFailedRef.current) {
+        lastRenderFailedRef.current = false;
+        const success = await renderMermaid(content);
+        lastRenderFailedRef.current = !success;
+      } else {
+        throttled(content);
       }
-
-      throttledRenderMermaidRef.current(mermaidDefinition);
     };
 
     fn.flush = () => {
-      throttledRenderMermaidRef.current?.flush();
+      throttled.flush();
     };
     fn.cancel = () => {
-      throttledRenderMermaidRef.current?.cancel();
+      throttled.cancel();
     };
 
     return fn;
-  }, [renderMermaid, calculateThrottleDelay]);
+  }, [renderMermaid]);
 
   useEffect(() => {
     return () => {
