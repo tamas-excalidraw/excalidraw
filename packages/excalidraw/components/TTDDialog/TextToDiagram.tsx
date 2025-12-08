@@ -274,8 +274,16 @@ export const TextToDiagram = ({
     if (!runtime || runtime < 300) {
       return 300;
     }
-    const delay = Math.max(50, Math.ceil(runtime * 1.5));
-    return delay;
+
+    if (runtime < 800) {
+      return Math.ceil(runtime * 1.5);
+    }
+
+    if (runtime < 1200) {
+      return Math.ceil(runtime * 2);
+    }
+
+    return Math.ceil(runtime * 3);
   }, []);
 
   const throttledRenderMermaidRef = useRef<ReturnType<typeof throttle> | null>(
