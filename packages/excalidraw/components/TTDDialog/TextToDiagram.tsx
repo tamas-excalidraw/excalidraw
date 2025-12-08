@@ -215,7 +215,6 @@ export const TextToDiagram = ({
         mermaidDefinition,
       });
       const endTime = performance.now();
-      console.log("### performance: mermaid render time", endTime - startTime);
       lastRenderRuntimeRef.current = endTime - startTime;
 
       if (result.success) {
@@ -262,24 +261,71 @@ export const TextToDiagram = ({
 
   const lastRenderFailedRef = useRef(false);
 
+  const isValidMermaidSyntax = useCallback((content: string): boolean => {
+    const trimmed = content.trim();
+    if (!trimmed) {
+      return false;
+    }
+
+    const openBrackets = (trimmed.match(/\[/g) || []).length;
+    const closeBrackets = (trimmed.match(/\]/g) || []).length;
+    const openBraces = (trimmed.match(/\{/g) || []).length;
+    const closeBraces = (trimmed.match(/\}/g) || []).length;
+    const openParens = (trimmed.match(/\(/g) || []).length;
+    const closeParens = (trimmed.match(/\)/g) || []).length;
+
+    if (
+      openBrackets - closeBrackets >= 1 ||
+      openBraces - closeBraces >= 1 ||
+      openParens - closeParens >= 1
+    ) {
+      return false;
+    }
+
+    const lastLine = trimmed.split("\n").pop()?.trim() || "";
+    const incompletePatterns = [
+      /-->$/,
+      /--$/,
+      /-\.$/,
+      /==>$/,
+      /==$/,
+      /~~$/,
+      /::$/,
+      /:$/,
+      /\|$/,
+      /&$/,
+    ];
+
+    if (incompletePatterns.some((pattern) => pattern.test(lastLine))) {
+      return false;
+    }
+
+    return true;
+  }, []);
+
   const throttledRenderMermaid = useMemo(() => {
     const throttled = throttle(
       async (content: string) => {
+        if (!isValidMermaidSyntax(content)) {
+          lastRenderFailedRef.current = true;
+          return;
+        }
         const success = await renderMermaid(content);
-        console.log("### success", success);
         lastRenderFailedRef.current = !success;
       },
       3000,
-      { leading: true, trailing: true },
+      { leading: true, trailing: false },
     );
 
     const fn = async (content: string) => {
-      console.log(
-        "### lastRenderFailedRef.current",
-        lastRenderFailedRef.current,
-      );
       if (lastRenderFailedRef.current) {
         lastRenderFailedRef.current = false;
+        if (!isValidMermaidSyntax(content)) {
+          console.log("### failing early");
+          // Still invalid, mark as failed again
+          lastRenderFailedRef.current = true;
+          return;
+        }
         const success = await renderMermaid(content);
         lastRenderFailedRef.current = !success;
       } else {
@@ -295,7 +341,7 @@ export const TextToDiagram = ({
     };
 
     return fn;
-  }, [renderMermaid]);
+  }, [renderMermaid, isValidMermaidSyntax]);
 
   useEffect(() => {
     return () => {
