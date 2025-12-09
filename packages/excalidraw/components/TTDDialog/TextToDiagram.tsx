@@ -97,6 +97,7 @@ export const TextToDiagram = ({
   const isRenderingRef = useRef(false);
   const pendingRenderContentRef = useRef<string | null>(null);
   const lastRenderRuntimeRef = useRef(0);
+  const shouldThrottleRef = useRef(false);
 
   const data = useRef<{
     elements: readonly NonDeletedExcalidrawElement[];
@@ -215,7 +216,12 @@ export const TextToDiagram = ({
         mermaidDefinition,
       });
       const endTime = performance.now();
-      lastRenderRuntimeRef.current = endTime - startTime;
+      const runtime = endTime - startTime;
+      lastRenderRuntimeRef.current = runtime;
+
+      if (runtime > 100) {
+        shouldThrottleRef.current = true;
+      }
 
       if (result.success) {
         setTtdGeneration((s) => ({
@@ -355,6 +361,7 @@ export const TextToDiagram = ({
     }
 
     accumulatedContentRef.current = "";
+    shouldThrottleRef.current = false; // Reset throttle flag for replay
     setOnTextSubmitInProgess(true);
     setShowPreview(true);
 
@@ -363,12 +370,21 @@ export const TextToDiagram = ({
     for (const chunk of mockChunks) {
       updateAssistantContent(updateLastMessage, chunk);
       accumulatedContentRef.current += chunk;
-      throttledRenderMermaid(accumulatedContentRef.current);
+      const content = accumulatedContentRef.current;
+
+      if (shouldThrottleRef.current) {
+        throttledRenderMermaid(content);
+      } else {
+        if (isValidMermaidSyntax(content)) {
+          renderMermaid(content);
+        }
+      }
 
       const delay = Math.floor(Math.random() * 5) + 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
+    throttledRenderMermaid.flush();
     updateLastMessage({ isGenerating: false }, "assistant");
     setOnTextSubmitInProgess(false);
   }, [
@@ -378,6 +394,8 @@ export const TextToDiagram = ({
     updateLastMessage,
     updateAssistantContent,
     renderMermaid,
+    throttledRenderMermaid,
+    isValidMermaidSyntax,
     setOnTextSubmitInProgess,
   ]);
 
@@ -519,6 +537,7 @@ export const TextToDiagram = ({
     }
 
     accumulatedContentRef.current = "";
+    shouldThrottleRef.current = false; // Reset throttle flag for new generation
 
     setShowPreview(true);
 
@@ -546,7 +565,15 @@ export const TextToDiagram = ({
           onChunk: (chunk: string) => {
             updateAssistantContent(updateLastMessage, chunk);
             accumulatedContentRef.current += chunk;
-            throttledRenderMermaid(accumulatedContentRef.current);
+            const content = accumulatedContentRef.current;
+
+            if (shouldThrottleRef.current) {
+              throttledRenderMermaid(content);
+            } else {
+              if (isValidMermaidSyntax(content)) {
+                renderMermaid(content);
+              }
+            }
           },
           signal: abortController.signal,
         });
