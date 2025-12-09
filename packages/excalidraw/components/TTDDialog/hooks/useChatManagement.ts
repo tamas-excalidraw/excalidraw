@@ -86,11 +86,8 @@ export const useChatManagement = ({
         prompt: chat.currentPrompt,
         validMermaidContent: chat.validMermaidContent || null,
       });
-      if (chat.validMermaidContent || chat.generatedResponse) {
-        setShowPreview(true);
-      } else {
-        setShowPreview(false);
-      }
+
+      setShowPreview(!!chat.validMermaidContent || !!chat.generatedResponse);
 
       if (
         rateLimits?.rateLimitRemaining === 0 &&
