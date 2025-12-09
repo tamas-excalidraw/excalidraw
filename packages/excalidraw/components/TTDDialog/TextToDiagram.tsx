@@ -46,7 +46,6 @@ const TextToDiagramContent = () => {
     updateAssistantContent,
   } = useTTDContext();
 
-  // Mermaid renderer hook
   const {
     renderMermaid,
     throttledRenderMermaid,
@@ -56,7 +55,6 @@ const TextToDiagramContent = () => {
     resetThrottleState,
   } = useMermaidRenderer();
 
-  // Chat messages hook
   const {
     addMessage,
     updateLastMessage,
@@ -66,7 +64,6 @@ const TextToDiagramContent = () => {
     getMessagesForApi,
   } = useChatMessages({ renderMermaid });
 
-  // Text generation hook
   const { onGenerate, handleAbort, isGenerating, accumulatedContentRef } =
     useTextGeneration({
       getMessagesForApi,
@@ -80,7 +77,6 @@ const TextToDiagramContent = () => {
       resetThrottleState,
     });
 
-  // Chat management hook
   const {
     isMenuOpen,
     onRestoreChat,
@@ -94,7 +90,6 @@ const TextToDiagramContent = () => {
     handleAbort,
   });
 
-  // Initialize showPreview from ttdGeneration
   useEffect(() => {
     if (
       ttdGeneration?.validMermaidContent ||
@@ -108,7 +103,6 @@ const TextToDiagramContent = () => {
     setShowPreview,
   ]);
 
-  // Render mermaid when library loads
   useEffect(() => {
     if (
       mermaidToExcalidrawLib.loaded &&
@@ -130,7 +124,6 @@ const TextToDiagramContent = () => {
     isRenderingRef,
   ]);
 
-  // Add rate limit message when chat opens if limit is zero
   useEffect(() => {
     if (rateLimits?.rateLimitRemaining === 0) {
       const hasRateLimitMessage = chatHistory.messages.some(
@@ -148,7 +141,7 @@ const TextToDiagramContent = () => {
     }
   }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage]);
 
-  // Replay handler for testing
+  // TODO:: just for testing
   const onReplay = useCallback(async () => {
     if (isGenerating || mockChunks.length === 0) {
       return;
@@ -190,7 +183,6 @@ const TextToDiagramContent = () => {
     fastThrottledRenderMermaid,
   ]);
 
-  // View as Mermaid handler
   const onViewAsMermaid = useCallback(() => {
     if (typeof ttdGeneration?.generatedResponse === "string") {
       saveMermaidDataToStorage(ttdGeneration.generatedResponse);
@@ -200,7 +192,6 @@ const TextToDiagramContent = () => {
     }
   }, [ttdGeneration?.generatedResponse, setAppState]);
 
-  // Message handlers
   const handleMermaidTabClick = useCallback(
     (message: ChatMessageType) => {
       const mermaidContent = message.content || "";

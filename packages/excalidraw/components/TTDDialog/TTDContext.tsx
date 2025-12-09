@@ -21,13 +21,15 @@ import type { ChatMessageType } from "../Chat";
 import type { BinaryFiles } from "../../types";
 import type { TTDPayload, OnTestSubmitRetValue, RateLimits } from "./types";
 
-const rateLimitsAtom = atom<RateLimits | null>(null);
-
-const ttdGenerationAtom = atom<{
+type TTDGeneration = {
   generatedResponse: string | null;
   prompt: string | null;
   validMermaidContent: string | null;
-} | null>(null);
+} | null;
+
+const rateLimitsAtom = atom<RateLimits | null>(null);
+
+const ttdGenerationAtom = atom<TTDGeneration>(null);
 
 const ttdSessionIdAtom = atom<string>(randomId());
 
@@ -42,31 +44,8 @@ interface TTDContextValue {
 
   ttdSessionId: string;
   setTtdSessionId: (id: string) => void;
-  ttdGeneration: {
-    generatedResponse: string | null;
-    prompt: string | null;
-    validMermaidContent: string | null;
-  } | null;
-  setTtdGeneration: (
-    updater:
-      | ((
-          prev: {
-            generatedResponse: string | null;
-            prompt: string | null;
-            validMermaidContent: string | null;
-          } | null,
-        ) => {
-          generatedResponse: string | null;
-          prompt: string | null;
-          validMermaidContent: string | null;
-        } | null)
-      | {
-          generatedResponse: string | null;
-          prompt: string | null;
-          validMermaidContent: string | null;
-        }
-      | null,
-  ) => void;
+  ttdGeneration: TTDGeneration;
+  setTtdGeneration: React.Dispatch<React.SetStateAction<TTDGeneration>>;
   rateLimits: RateLimits | null;
   setRateLimits: (limits: RateLimits | null) => void;
 
@@ -188,36 +167,6 @@ export const TTDProvider = ({
     [setChatHistory],
   );
 
-  const setTtdGeneration = useCallback(
-    (
-      updater:
-        | ((
-            prev: {
-              generatedResponse: string | null;
-              prompt: string | null;
-              validMermaidContent: string | null;
-            } | null,
-          ) => {
-            generatedResponse: string | null;
-            prompt: string | null;
-            validMermaidContent: string | null;
-          } | null)
-        | {
-            generatedResponse: string | null;
-            prompt: string | null;
-            validMermaidContent: string | null;
-          }
-        | null,
-    ) => {
-      if (typeof updater === "function") {
-        setTtdGenerationAtom(updater);
-      } else {
-        setTtdGenerationAtom(() => updater);
-      }
-    },
-    [setTtdGenerationAtom],
-  );
-
   const value = useMemo<TTDContextValue>(
     () => ({
       mermaidToExcalidrawLib,
@@ -231,7 +180,7 @@ export const TTDProvider = ({
       ttdSessionId,
       setTtdSessionId,
       ttdGeneration,
-      setTtdGeneration,
+      setTtdGeneration: setTtdGenerationAtom,
       rateLimits,
       setRateLimits,
 
@@ -260,7 +209,7 @@ export const TTDProvider = ({
       ttdSessionId,
       setTtdSessionId,
       ttdGeneration,
-      setTtdGeneration,
+      setTtdGenerationAtom,
       rateLimits,
       setRateLimits,
       addUserAndPendingAssistant,
