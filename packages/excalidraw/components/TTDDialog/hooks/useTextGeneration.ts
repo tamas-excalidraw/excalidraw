@@ -34,7 +34,7 @@ interface UseTextGenerationProps {
 }
 
 const MIN_PROMPT_LENGTH = 3;
-const MAX_PROMPT_LENGTH = 1000;
+const MAX_PROMPT_LENGTH = 10000;
 
 export const useTextGeneration = ({
   getMessagesForApi,
@@ -122,7 +122,12 @@ export const useTextGeneration = ({
         }
       }
     },
-    [rateLimits?.rateLimitRemaining, setRateLimits, updateLastMessage, addMessage],
+    [
+      rateLimits?.rateLimitRemaining,
+      setRateLimits,
+      updateLastMessage,
+      addMessage,
+    ],
   );
 
   const handleAbortedGeneration = useCallback(() => {
