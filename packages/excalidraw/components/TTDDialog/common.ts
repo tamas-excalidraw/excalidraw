@@ -63,7 +63,6 @@ export const convertMermaidToExcalidraw = async ({
   setError,
   data,
 }: ConvertMermaidToExcalidrawFormatProps): Promise<ConvertMermaidResult> => {
-  console.log("### rendering", new Date().toISOString());
   const canvasNode = canvasRef.current;
   const parent = canvasNode?.parentElement;
 

@@ -24,13 +24,11 @@ export type TTDPayload = {
   signal?: AbortSignal;
 };
 
-// Data Types
 export type MermaidData = {
   elements: readonly NonDeletedExcalidrawElement[];
   files: BinaryFiles | null;
 };
 
-// Hook Props Types
 export interface UseMermaidRendererProps {
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -119,4 +117,3 @@ export interface RateLimits {
   rateLimit: number;
   rateLimitRemaining: number;
 }
-

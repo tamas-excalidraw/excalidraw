@@ -70,81 +70,56 @@ export const useMermaidRenderer = () => {
     [mermaidToExcalidrawLib, setTtdGeneration, canvasRef, data, setError],
   );
 
-  const throttledRenderMermaid: ThrottledFunction = useMemo(() => {
-    const throttled = throttle(
-      async (content: string) => {
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
+  const createThrottledRenderer = useCallback(
+    (delay: number): ThrottledFunction => {
+      const throttled = throttle(
+        async (content: string) => {
+          if (!isValidMermaidSyntax(content)) {
+            lastRenderFailedRef.current = true;
+            return;
+          }
+          const success = await renderMermaid(content);
+          lastRenderFailedRef.current = !success;
+        },
+        delay,
+        { leading: true, trailing: false },
+      );
+
+      const fn = async (content: string) => {
+        if (lastRenderFailedRef.current) {
+          lastRenderFailedRef.current = false;
+          if (!isValidMermaidSyntax(content)) {
+            lastRenderFailedRef.current = true;
+            return;
+          }
+          const success = await renderMermaid(content);
+          lastRenderFailedRef.current = !success;
+        } else {
+          throttled(content);
         }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      },
-      3000,
-      { leading: true, trailing: false },
-    );
+      };
 
-    const fn = async (content: string) => {
-      if (lastRenderFailedRef.current) {
-        lastRenderFailedRef.current = false;
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      } else {
-        throttled(content);
-      }
-    };
+      fn.flush = () => {
+        throttled.flush();
+      };
+      fn.cancel = () => {
+        throttled.cancel();
+      };
 
-    fn.flush = () => {
-      throttled.flush();
-    };
-    fn.cancel = () => {
-      throttled.cancel();
-    };
+      return fn;
+    },
+    [renderMermaid],
+  );
 
-    return fn;
-  }, [renderMermaid]);
+  const throttledRenderMermaid: ThrottledFunction = useMemo(
+    () => createThrottledRenderer(3000),
+    [createThrottledRenderer],
+  );
 
-  const fastThrottledRenderMermaid: ThrottledFunction = useMemo(() => {
-    const throttled = throttle(
-      async (content: string) => {
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      },
-      350,
-      { leading: true, trailing: false },
-    );
-
-    const fn = async (content: string) => {
-      if (lastRenderFailedRef.current) {
-        lastRenderFailedRef.current = false;
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      } else {
-        throttled(content);
-      }
-    };
-
-    fn.flush = () => {
-      throttled.flush();
-    };
-    fn.cancel = () => {
-      throttled.cancel();
-    };
-
-    return fn;
-  }, [renderMermaid]);
+  const fastThrottledRenderMermaid: ThrottledFunction = useMemo(
+    () => createThrottledRenderer(350),
+    [createThrottledRenderer],
+  );
 
   useEffect(() => {
     return () => {
