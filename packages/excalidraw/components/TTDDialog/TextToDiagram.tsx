@@ -349,6 +349,7 @@ export const TextToDiagram = ({
     return fn;
   }, [renderMermaid, isValidMermaidSyntax]);
 
+  // Fast throttle for renders < 100ms
   const fastThrottledRenderMermaid = useMemo(() => {
     const throttled = throttle(
       async (content: string) => {
@@ -367,6 +368,7 @@ export const TextToDiagram = ({
       if (lastRenderFailedRef.current) {
         lastRenderFailedRef.current = false;
         if (!isValidMermaidSyntax(content)) {
+          // Still invalid, mark as failed again
           lastRenderFailedRef.current = true;
           return;
         }
@@ -590,13 +592,41 @@ export const TextToDiagram = ({
 
       trackEvent("ai", "generate", "ttd");
 
+      // Filter messages: last 1 user message, last 2 assistant messages, plus current prompt
+      const filteredMessages: Array<{
+        role: "user" | "assistant" | "system";
+        content: string;
+      }> = [];
+
+      // Find last user message and last 2 assistant messages, maintaining chronological order
+      const lastUserMessage = chatHistory.messages
+        .slice()
+        .reverse()
+        .find((msg) => msg.type === "user");
+
+      const lastAssistantMessages = chatHistory.messages
+        .filter((msg) => msg.type === "assistant")
+        .slice(-2);
+
+      // Build filtered messages: last user, then last 2 assistants (in chronological order)
+      if (lastUserMessage) {
+        filteredMessages.push({
+          role: lastUserMessage.type,
+          content: lastUserMessage.content,
+        });
+      }
+
+      filteredMessages.push(
+        ...lastAssistantMessages.map((msg) => ({
+          role: msg.type as "user" | "assistant" | "system",
+          content: msg.content,
+        })),
+      );
+
       const { generatedResponse, error, rateLimit, rateLimitRemaining } =
         await onTextSubmit({
           messages: [
-            ...chatHistory.messages.map((msg) => ({
-              role: msg.type,
-              content: msg.content,
-            })),
+            ...filteredMessages,
             { role: "user", content: promptWithContext },
           ],
           onChunk: (chunk: string) => {
