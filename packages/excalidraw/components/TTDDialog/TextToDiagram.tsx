@@ -349,11 +349,50 @@ export const TextToDiagram = ({
     return fn;
   }, [renderMermaid, isValidMermaidSyntax]);
 
+  const fastThrottledRenderMermaid = useMemo(() => {
+    const throttled = throttle(
+      async (content: string) => {
+        if (!isValidMermaidSyntax(content)) {
+          lastRenderFailedRef.current = true;
+          return;
+        }
+        const success = await renderMermaid(content);
+        lastRenderFailedRef.current = !success;
+      },
+      350,
+      { leading: true, trailing: false },
+    );
+
+    const fn = async (content: string) => {
+      if (lastRenderFailedRef.current) {
+        lastRenderFailedRef.current = false;
+        if (!isValidMermaidSyntax(content)) {
+          lastRenderFailedRef.current = true;
+          return;
+        }
+        const success = await renderMermaid(content);
+        lastRenderFailedRef.current = !success;
+      } else {
+        throttled(content);
+      }
+    };
+
+    fn.flush = () => {
+      throttled.flush();
+    };
+    fn.cancel = () => {
+      throttled.cancel();
+    };
+
+    return fn;
+  }, [renderMermaid, isValidMermaidSyntax]);
+
   useEffect(() => {
     return () => {
       throttledRenderMermaid?.cancel();
+      fastThrottledRenderMermaid?.cancel();
     };
-  }, [throttledRenderMermaid]);
+  }, [throttledRenderMermaid, fastThrottledRenderMermaid]);
 
   const onReplay = useCallback(async () => {
     if (onTextSubmitInProgess || mockChunks.length === 0) {
@@ -375,9 +414,7 @@ export const TextToDiagram = ({
       if (shouldThrottleRef.current) {
         throttledRenderMermaid(content);
       } else {
-        if (isValidMermaidSyntax(content)) {
-          renderMermaid(content);
-        }
+        fastThrottledRenderMermaid(content);
       }
 
       const delay = Math.floor(Math.random() * 5) + 1;
@@ -385,6 +422,7 @@ export const TextToDiagram = ({
     }
 
     throttledRenderMermaid.flush();
+    fastThrottledRenderMermaid.flush();
     updateLastMessage({ isGenerating: false }, "assistant");
     setOnTextSubmitInProgess(false);
   }, [
@@ -393,9 +431,8 @@ export const TextToDiagram = ({
     setChatHistory,
     updateLastMessage,
     updateAssistantContent,
-    renderMermaid,
     throttledRenderMermaid,
-    isValidMermaidSyntax,
+    fastThrottledRenderMermaid,
     setOnTextSubmitInProgess,
   ]);
 
@@ -570,15 +607,14 @@ export const TextToDiagram = ({
             if (shouldThrottleRef.current) {
               throttledRenderMermaid(content);
             } else {
-              if (isValidMermaidSyntax(content)) {
-                renderMermaid(content);
-              }
+              fastThrottledRenderMermaid(content);
             }
           },
           signal: abortController.signal,
         });
 
       throttledRenderMermaid.flush();
+      fastThrottledRenderMermaid.flush();
 
       if (typeof generatedResponse === "string") {
         setTtdGeneration((s) => ({
