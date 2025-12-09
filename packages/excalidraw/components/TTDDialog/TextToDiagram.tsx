@@ -1,409 +1,161 @@
-import { useEffect, useRef, useState, useCallback, useMemo } from "react";
+import { useEffect, useCallback } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
-import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
 
-import { findLastIndex, randomId } from "@excalidraw/common";
-
-import { trackEvent } from "../../analytics";
-import { atom, useAtom } from "../../editor-jotai";
 import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
-import {
-  ArrowRightIcon,
-  HelpIconThin,
-  HamburgerMenuIcon,
-  TrashIcon,
-} from "../icons";
-import { Tooltip } from "../Tooltip";
-import DropdownMenu from "../dropdownMenu/DropdownMenu";
-import { ChatInterface, useChatAgent } from "../Chat";
-import { InlineIcon } from "../InlineIcon";
-import { useTTDChatStorage } from "./useTTDChatStorage";
-import { TTDDialogOutput } from "./TTDDialogOutput";
-import { TTDDialogPanel } from "./TTDDialogPanel";
+
 import {
   convertMermaidToExcalidraw,
   insertToEditor,
   saveMermaidDataToStorage,
 } from "./common";
+import { TTDProvider, useTTDContext } from "./TTDContext";
+import { useMermaidRenderer } from "./hooks/useMermaidRenderer";
+import { useChatMessages } from "./hooks/useChatMessages";
+import { useTextGeneration } from "./hooks/useTextGeneration";
+import { useChatManagement } from "./hooks/useChatManagement";
+import { TTDChatPanel } from "./components/TTDChatPanel";
+import { TTDPreviewPanel } from "./components/TTDPreviewPanel";
+import mockChunks from "./mock";
 
 import type { MermaidToExcalidrawLibProps } from "./common";
 import type { ChatMessageType } from "../Chat";
-import type { SavedChat } from "./useTTDChatStorage";
 import type { BinaryFiles } from "../../types";
-import { isFiniteNumber } from "@excalidraw/math";
-import mockChunks from "./mock";
-import clsx from "clsx";
-import throttle from "lodash.throttle";
+import type { TTDPayload, OnTestSubmitRetValue } from "./types";
 
-const MIN_PROMPT_LENGTH = 3;
-const MAX_PROMPT_LENGTH = 1000;
+export type { OnTestSubmitRetValue, TTDPayload };
 
-const rateLimitsAtom = atom<{
-  rateLimit: number;
-  rateLimitRemaining: number;
-} | null>(null);
-
-const ttdGenerationAtom = atom<{
-  generatedResponse: string | null;
-  prompt: string | null;
-  validMermaidContent: string | null;
-} | null>(null);
-
-const ttdSessionIdAtom = atom<string>(randomId());
-
-export type OnTestSubmitRetValue = {
-  rateLimit?: number | null;
-  rateLimitRemaining?: number | null;
-} & (
-  | { generatedResponse: string | undefined; error?: null | undefined }
-  | {
-      error: Error;
-      generatedResponse?: null | undefined;
-    }
-);
-
-export type TTDPayload = {
-  messages: Array<{
-    role: "user" | "assistant" | "system";
-    content: string;
-  }>;
-  onChunk?: (chunk: string) => void;
-  signal?: AbortSignal;
-};
-
-export const TextToDiagram = ({
-  mermaidToExcalidrawLib,
-  onTextSubmit,
-}: {
-  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
-  onTextSubmit(payload: TTDPayload): Promise<OnTestSubmitRetValue>;
-}) => {
+const TextToDiagramContent = () => {
   const app = useApp();
   const setAppState = useExcalidrawSetAppState();
 
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const someRandomDivRef = useRef<HTMLDivElement>(null);
-  const [ttdSessionId, setTtdSessionId] = useAtom(ttdSessionIdAtom);
-  const [ttdGeneration, setTtdGeneration] = useAtom(ttdGenerationAtom);
-  const [onTextSubmitInProgess, setOnTextSubmitInProgess] = useState(false);
-  const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
-  const [showPreview, setShowPreview] = useState(
-    !!(ttdGeneration?.validMermaidContent || ttdGeneration?.generatedResponse),
-  );
-  const accumulatedContentRef = useRef("");
-  const streamingAbortControllerRef = useRef<AbortController | null>(null);
-  const isRenderingRef = useRef(false);
-  const pendingRenderContentRef = useRef<string | null>(null);
-  const lastRenderRuntimeRef = useRef(0);
-  const shouldThrottleRef = useRef(false);
-
-  const data = useRef<{
-    elements: readonly NonDeletedExcalidrawElement[];
-    files: BinaryFiles | null;
-  }>({ elements: [], files: null });
-
-  const [error, setError] = useState<Error | null>(null);
-
   const {
-    addUserAndPendingAssistant,
-    setAssistantError,
-    updateAssistantContent,
-    chatHistory,
-    setChatHistory,
-  } = useChatAgent();
-
-  const {
-    savedChats,
-    saveCurrentChat,
-    deleteChat,
-    restoreChat,
-    createNewChatId,
-  } = useTTDChatStorage({
-    chatHistory,
+    mermaidToExcalidrawLib,
+    showPreview,
+    setShowPreview,
+    error,
+    setError,
     ttdSessionId,
     ttdGeneration,
+    rateLimits,
+    canvasRef,
+    data,
+    chatHistory,
+    savedChats,
+    updateAssistantContent,
+  } = useTTDContext();
+
+  // Mermaid renderer hook
+  const {
+    renderMermaid,
+    throttledRenderMermaid,
+    fastThrottledRenderMermaid,
+    shouldThrottleRef,
+    isRenderingRef,
+    resetThrottleState,
+  } = useMermaidRenderer();
+
+  // Chat messages hook
+  const {
+    addMessage,
+    updateLastMessage,
+    handleDeleteMessage,
+    removeLastErrorMessage,
+    handlePromptChange,
+    getMessagesForApi,
+  } = useChatMessages({ renderMermaid });
+
+  // Text generation hook
+  const { onGenerate, handleAbort, isGenerating, accumulatedContentRef } =
+    useTextGeneration({
+      getMessagesForApi,
+      addMessage,
+      updateLastMessage,
+      removeLastErrorMessage,
+      renderMermaid,
+      throttledRenderMermaid,
+      fastThrottledRenderMermaid,
+      shouldThrottleRef,
+      resetThrottleState,
+    });
+
+  // Chat management hook
+  const {
+    isMenuOpen,
+    onRestoreChat,
+    handleDeleteChat,
+    handleNewChat,
+    handleMenuToggle,
+    handleMenuClose,
+  } = useChatManagement({
+    accumulatedContentRef,
+    renderMermaid,
+    handleAbort,
   });
 
-  const handlePromptChange = (newPrompt: string) => {
-    setChatHistory((prev) => ({
-      ...prev,
-      currentPrompt: newPrompt,
-    }));
-  };
-
-  const addMessage = (message: Omit<ChatMessageType, "id" | "timestamp">) => {
-    const newMessage: ChatMessageType = {
-      ...message,
-      id: randomId(),
-      timestamp: new Date(),
-    };
-
-    setChatHistory((prev) => ({
-      ...prev,
-      messages: [...prev.messages, newMessage],
-    }));
-  };
-
-  const updateLastMessage = (
-    updates: Partial<ChatMessageType>,
-    type?: ChatMessageType["type"],
-  ) => {
-    setChatHistory((prev) => {
-      const lastMessageByTypeIdx = type
-        ? findLastIndex(prev.messages, (msg) => msg.type === type)
-        : prev.messages.length - 1;
-
-      return {
-        ...prev,
-        messages: prev.messages.map((msg, index) =>
-          index === lastMessageByTypeIdx ? { ...msg, ...updates } : msg,
-        ),
-      };
-    });
-  };
-
-  const handleDeleteMessage = useCallback(
-    (messageId: string) => {
-      const assistantMessageIndex = chatHistory.messages.findIndex(
-        (msg) => msg.id === messageId && msg.type === "assistant",
-      );
-
-      const remainingMessages = chatHistory.messages.slice(
-        0,
-        assistantMessageIndex - 1,
-      );
-
-      const latestAssistantMessage = remainingMessages.reduce(
-        (soFar, curr) => (curr.type === "assistant" ? curr : soFar),
-        null as ChatMessageType | null,
-      );
-
-      if (latestAssistantMessage) {
-        renderMermaid(latestAssistantMessage.content);
-      }
-
-      setChatHistory({
-        ...chatHistory,
-        messages: remainingMessages,
-      });
-    },
-    [setChatHistory, setTtdGeneration, ttdGeneration],
-  );
-
-  const renderMermaid = useCallback(
-    async (mermaidDefinition: string): Promise<boolean> => {
-      if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
-        return false;
-      }
-
-      if (isRenderingRef.current) {
-        pendingRenderContentRef.current = mermaidDefinition;
-        return false;
-      }
-
-      isRenderingRef.current = true;
-
-      pendingRenderContentRef.current = null;
-
-      const startTime = performance.now();
-      const result = await convertMermaidToExcalidraw({
-        canvasRef: someRandomDivRef,
-        data,
-        mermaidToExcalidrawLib,
-        setError,
-        mermaidDefinition,
-      });
-      const endTime = performance.now();
-      const runtime = endTime - startTime;
-      lastRenderRuntimeRef.current = runtime;
-
-      if (runtime > 100) {
-        shouldThrottleRef.current = true;
-      }
-
-      if (result.success) {
-        setTtdGeneration((s) => ({
-          generatedResponse: s?.generatedResponse ?? null,
-          prompt: s?.prompt ?? null,
-          validMermaidContent: mermaidDefinition,
-        }));
-      }
-
-      isRenderingRef.current = false;
-      return result.success;
-    },
-    [mermaidToExcalidrawLib, setTtdGeneration, someRandomDivRef],
-  );
-
-  const handleAbortedGeneration = useCallback(() => {
-    const currentContent = accumulatedContentRef.current;
-    if (currentContent) {
-      setTtdGeneration((s) => ({
-        generatedResponse: currentContent,
-        prompt: s?.prompt ?? null,
-        validMermaidContent: s?.validMermaidContent ?? null,
-      }));
-      updateLastMessage(
-        {
-          isGenerating: false,
-          content: currentContent,
-        },
-        "assistant",
-      );
-      if (currentContent.trim()) {
-        renderMermaid(currentContent);
-      }
-    } else {
-      updateLastMessage(
-        {
-          isGenerating: false,
-        },
-        "assistant",
-      );
-    }
-  }, [setTtdGeneration, updateLastMessage, renderMermaid]);
-
-  const lastRenderFailedRef = useRef(false);
-
-  const isValidMermaidSyntax = useCallback((content: string): boolean => {
-    const trimmed = content.trim();
-    if (!trimmed) {
-      return false;
-    }
-
-    const openBrackets = (trimmed.match(/\[/g) || []).length;
-    const closeBrackets = (trimmed.match(/\]/g) || []).length;
-    const openBraces = (trimmed.match(/\{/g) || []).length;
-    const closeBraces = (trimmed.match(/\}/g) || []).length;
-    const openParens = (trimmed.match(/\(/g) || []).length;
-    const closeParens = (trimmed.match(/\)/g) || []).length;
-
-    if (
-      openBrackets - closeBrackets >= 1 ||
-      openBraces - closeBraces >= 1 ||
-      openParens - closeParens >= 1
-    ) {
-      return false;
-    }
-
-    const lastLine = trimmed.split("\n").pop()?.trim() || "";
-    const incompletePatterns = [
-      /-->$/,
-      /--$/,
-      /-\.$/,
-      /==>$/,
-      /==$/,
-      /~~$/,
-      /::$/,
-      /:$/,
-      /\|$/,
-      /&$/,
-    ];
-
-    if (incompletePatterns.some((pattern) => pattern.test(lastLine))) {
-      return false;
-    }
-
-    return true;
-  }, []);
-
-  const throttledRenderMermaid = useMemo(() => {
-    const throttled = throttle(
-      async (content: string) => {
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      },
-      3000,
-      { leading: true, trailing: false },
-    );
-
-    const fn = async (content: string) => {
-      if (lastRenderFailedRef.current) {
-        lastRenderFailedRef.current = false;
-        if (!isValidMermaidSyntax(content)) {
-          console.log("### failing early");
-          // Still invalid, mark as failed again
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      } else {
-        throttled(content);
-      }
-    };
-
-    fn.flush = () => {
-      throttled.flush();
-    };
-    fn.cancel = () => {
-      throttled.cancel();
-    };
-
-    return fn;
-  }, [renderMermaid, isValidMermaidSyntax]);
-
-  // Fast throttle for renders < 100ms
-  const fastThrottledRenderMermaid = useMemo(() => {
-    const throttled = throttle(
-      async (content: string) => {
-        if (!isValidMermaidSyntax(content)) {
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      },
-      350,
-      { leading: true, trailing: false },
-    );
-
-    const fn = async (content: string) => {
-      if (lastRenderFailedRef.current) {
-        lastRenderFailedRef.current = false;
-        if (!isValidMermaidSyntax(content)) {
-          // Still invalid, mark as failed again
-          lastRenderFailedRef.current = true;
-          return;
-        }
-        const success = await renderMermaid(content);
-        lastRenderFailedRef.current = !success;
-      } else {
-        throttled(content);
-      }
-    };
-
-    fn.flush = () => {
-      throttled.flush();
-    };
-    fn.cancel = () => {
-      throttled.cancel();
-    };
-
-    return fn;
-  }, [renderMermaid, isValidMermaidSyntax]);
-
+  // Initialize showPreview from ttdGeneration
   useEffect(() => {
-    return () => {
-      throttledRenderMermaid?.cancel();
-      fastThrottledRenderMermaid?.cancel();
-    };
-  }, [throttledRenderMermaid, fastThrottledRenderMermaid]);
+    if (
+      ttdGeneration?.validMermaidContent ||
+      ttdGeneration?.generatedResponse
+    ) {
+      setShowPreview(true);
+    }
+  }, [
+    ttdGeneration?.validMermaidContent,
+    ttdGeneration?.generatedResponse,
+    setShowPreview,
+  ]);
 
+  // Render mermaid when library loads
+  useEffect(() => {
+    if (
+      mermaidToExcalidrawLib.loaded &&
+      !isGenerating &&
+      !isRenderingRef.current
+    ) {
+      const contentToRender =
+        ttdGeneration?.validMermaidContent || ttdGeneration?.generatedResponse;
+      if (contentToRender) {
+        renderMermaid(contentToRender);
+      }
+    }
+  }, [
+    mermaidToExcalidrawLib.loaded,
+    renderMermaid,
+    isGenerating,
+    ttdGeneration?.validMermaidContent,
+    ttdGeneration?.generatedResponse,
+    isRenderingRef,
+  ]);
+
+  // Add rate limit message when chat opens if limit is zero
+  useEffect(() => {
+    if (rateLimits?.rateLimitRemaining === 0) {
+      const hasRateLimitMessage = chatHistory.messages.some(
+        (msg) =>
+          msg.type === "system" &&
+          msg.content.includes(t("chat.rateLimit.message")),
+      );
+
+      if (!hasRateLimitMessage) {
+        addMessage({
+          type: "system",
+          content: t("chat.rateLimit.message"),
+        });
+      }
+    }
+  }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage]);
+
+  // Replay handler for testing
   const onReplay = useCallback(async () => {
-    if (onTextSubmitInProgess || mockChunks.length === 0) {
+    if (isGenerating || mockChunks.length === 0) {
       return;
     }
 
     accumulatedContentRef.current = "";
-    shouldThrottleRef.current = false; // Reset throttle flag for replay
-    setOnTextSubmitInProgess(true);
+    resetThrottleState();
     setShowPreview(true);
 
     updateLastMessage({ content: "", isGenerating: true }, "assistant");
@@ -426,330 +178,29 @@ export const TextToDiagram = ({
     throttledRenderMermaid.flush();
     fastThrottledRenderMermaid.flush();
     updateLastMessage({ isGenerating: false }, "assistant");
-    setOnTextSubmitInProgess(false);
   }, [
-    onTextSubmitInProgess,
-    chatHistory.messages,
-    setChatHistory,
+    isGenerating,
+    accumulatedContentRef,
+    resetThrottleState,
+    setShowPreview,
     updateLastMessage,
     updateAssistantContent,
+    shouldThrottleRef,
     throttledRenderMermaid,
     fastThrottledRenderMermaid,
-    setOnTextSubmitInProgess,
   ]);
 
-  useEffect(() => {
-    if (
-      mermaidToExcalidrawLib.loaded &&
-      !onTextSubmitInProgess &&
-      !isRenderingRef.current
-    ) {
-      const contentToRender =
-        ttdGeneration?.validMermaidContent || ttdGeneration?.generatedResponse;
-      if (contentToRender) {
-        renderMermaid(contentToRender);
-      }
-    }
-  }, [mermaidToExcalidrawLib.loaded, renderMermaid, onTextSubmitInProgess]);
-
-  // Add rate limit message when chat opens if limit is zero and message doesn't exist
-  useEffect(() => {
-    if (rateLimits?.rateLimitRemaining === 0) {
-      const hasRateLimitMessage = chatHistory.messages.some(
-        (msg) =>
-          msg.type === "system" &&
-          msg.content.includes(t("chat.rateLimit.message")),
-      );
-
-      if (!hasRateLimitMessage) {
-        addMessage({
-          type: "system",
-          content: t("chat.rateLimit.message"),
-        });
-      }
-    }
-  }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage, t]);
-
-  const validatePrompt = useCallback(
-    (prompt: string): boolean => {
-      if (
-        prompt.length > MAX_PROMPT_LENGTH ||
-        prompt.length < MIN_PROMPT_LENGTH ||
-        onTextSubmitInProgess ||
-        rateLimits?.rateLimitRemaining === 0
-      ) {
-        if (prompt.length < MIN_PROMPT_LENGTH) {
-          setError(
-            new Error(
-              t("chat.errors.promptTooShort", { min: MIN_PROMPT_LENGTH }),
-            ),
-          );
-        }
-        if (prompt.length > MAX_PROMPT_LENGTH) {
-          setError(
-            new Error(
-              t("chat.errors.promptTooLong", { max: MAX_PROMPT_LENGTH }),
-            ),
-          );
-        }
-
-        return false;
-      }
-      return true;
-    },
-    [onTextSubmitInProgess, rateLimits?.rateLimitRemaining, t],
-  );
-
-  const handleRateLimits = useCallback(
-    (
-      rateLimit: number | null | undefined,
-      rateLimitRemaining: number | null | undefined,
-    ) => {
-      if (isFiniteNumber(rateLimit) && isFiniteNumber(rateLimitRemaining)) {
-        const previousRemaining = rateLimits?.rateLimitRemaining ?? null;
-        setRateLimits({ rateLimit, rateLimitRemaining });
-
-        if (
-          rateLimitRemaining === 0 &&
-          previousRemaining !== null &&
-          previousRemaining > 0
-        ) {
-          updateLastMessage(
-            {
-              isGenerating: false,
-            },
-            "assistant",
-          );
-          addMessage({
-            type: "system",
-            content: t("chat.rateLimit.message"),
-          });
-        }
-      }
-    },
-    [
-      rateLimits?.rateLimitRemaining,
-      setRateLimits,
-      updateLastMessage,
-      addMessage,
-      t,
-    ],
-  );
-
-  const removeLastErrorMessage = useCallback(() => {
-    setChatHistory((prev) => {
-      const lastErrorIndex = (prev.messages ?? []).findIndex(
-        (msg) => msg.type === "assistant" && msg.error,
-      );
-      if (lastErrorIndex !== -1) {
-        return {
-          ...prev,
-          messages: prev.messages.filter((_, i) => i !== lastErrorIndex),
-        };
-      }
-      return prev;
-    });
-  }, [setChatHistory]);
-
-  const onGenerate = async (
-    promptWithContext: string,
-    isRepairFlow: boolean = false,
-  ) => {
-    if (!validatePrompt(promptWithContext)) {
-      return;
-    }
-
-    setTtdGeneration((s) => ({
-      generatedResponse: s?.generatedResponse ?? null,
-      prompt: s?.prompt ?? null,
-      validMermaidContent: null,
-    }));
-
-    if (isRepairFlow) {
-      addMessage({
-        type: "assistant",
-        content: "",
-        isGenerating: true,
-      });
-    } else {
-      addUserAndPendingAssistant(promptWithContext, addMessage);
-    }
-
-    accumulatedContentRef.current = "";
-    shouldThrottleRef.current = false; // Reset throttle flag for new generation
-
-    setShowPreview(true);
-
-    if (streamingAbortControllerRef.current) {
-      streamingAbortControllerRef.current.abort();
-    }
-
-    const abortController = new AbortController();
-    streamingAbortControllerRef.current = abortController;
-
-    try {
-      setOnTextSubmitInProgess(true);
-
-      trackEvent("ai", "generate", "ttd");
-
-      // Filter messages: last 1 user message, last 2 assistant messages, plus current prompt
-      const filteredMessages: Array<{
-        role: "user" | "assistant" | "system";
-        content: string;
-      }> = [];
-
-      // Find last user message and last 2 assistant messages, maintaining chronological order
-      const lastUserMessage = chatHistory.messages
-        .slice()
-        .reverse()
-        .find((msg) => msg.type === "user");
-
-      const lastAssistantMessages = chatHistory.messages
-        .filter((msg) => msg.type === "assistant")
-        .slice(-2);
-
-      // Build filtered messages: last user, then last 2 assistants (in chronological order)
-      if (lastUserMessage) {
-        filteredMessages.push({
-          role: lastUserMessage.type,
-          content: lastUserMessage.content,
-        });
-      }
-
-      filteredMessages.push(
-        ...lastAssistantMessages.map((msg) => ({
-          role: msg.type as "user" | "assistant" | "system",
-          content: msg.content,
-        })),
-      );
-
-      const { generatedResponse, error, rateLimit, rateLimitRemaining } =
-        await onTextSubmit({
-          messages: [
-            ...filteredMessages,
-            { role: "user", content: promptWithContext },
-          ],
-          onChunk: (chunk: string) => {
-            updateAssistantContent(updateLastMessage, chunk);
-            accumulatedContentRef.current += chunk;
-            const content = accumulatedContentRef.current;
-
-            if (shouldThrottleRef.current) {
-              throttledRenderMermaid(content);
-            } else {
-              fastThrottledRenderMermaid(content);
-            }
-          },
-          signal: abortController.signal,
-        });
-
-      throttledRenderMermaid.flush();
-      fastThrottledRenderMermaid.flush();
-
-      if (typeof generatedResponse === "string") {
-        setTtdGeneration((s) => ({
-          generatedResponse,
-          prompt: s?.prompt ?? null,
-          validMermaidContent: s?.validMermaidContent ?? null,
-        }));
-
-        accumulatedContentRef.current = generatedResponse;
-      }
-
-      handleRateLimits(rateLimit, rateLimitRemaining);
-
-      if (error) {
-        const isAborted =
-          error.name === "AbortError" ||
-          error.message === "Aborted" ||
-          abortController.signal.aborted;
-
-        if (isAborted) {
-          handleAbortedGeneration();
-          return;
-        }
-
-        if (
-          error.message ===
-          "Too many requests today, please try again tomorrow!"
-        ) {
-          // REMOVING LAST MSG
-          setChatHistory((prev) => ({
-            ...prev,
-            messages: prev.messages.slice(0, -1),
-          }));
-        } else {
-          setAssistantError(
-            updateLastMessage,
-            setError,
-            error.message,
-            "network",
-          );
-        }
-        return;
-      }
-
-      updateLastMessage(
-        {
-          isGenerating: false,
-          content: generatedResponse ?? "",
-        },
-        "assistant",
-      );
-
-      if (isRepairFlow) {
-        removeLastErrorMessage();
-      }
-
-      saveCurrentChat();
-
-      await parseMermaidToExcalidraw(generatedResponse ?? "");
-
-      // do a final render, just to be sure
-      renderMermaid(accumulatedContentRef.current);
-      trackEvent("ai", "mermaid parse success", "ttd");
-    } catch (error: unknown) {
-      handleError(error as Error, "parse");
-    } finally {
-      setOnTextSubmitInProgess(false);
-      streamingAbortControllerRef.current = null;
-    }
-  };
-
-  const handleError = useCallback(
-    (error: Error, errorType: "parse") => {
-      let message: string | undefined = error.message;
-
-      if (errorType === "parse") {
-        trackEvent("ai", "mermaid parse failed", "ttd");
-        updateLastMessage(
-          {
-            isGenerating: false,
-            error: error.message,
-            errorType: "parse",
-          },
-          "assistant",
-        );
-        setError(new Error(message));
-      }
-    },
-    [
-      updateLastMessage,
-      setAssistantError,
-      setError,
-      ttdGeneration?.validMermaidContent,
-    ],
-  );
-
-  const onViewAsMermaid = () => {
+  // View as Mermaid handler
+  const onViewAsMermaid = useCallback(() => {
     if (typeof ttdGeneration?.generatedResponse === "string") {
       saveMermaidDataToStorage(ttdGeneration.generatedResponse);
       setAppState({
         openDialog: { name: "ttd", tab: "mermaid" },
       });
     }
-  };
+  }, [ttdGeneration?.generatedResponse, setAppState]);
 
+  // Message handlers
   const handleMermaidTabClick = useCallback(
     (message: ChatMessageType) => {
       const mermaidContent = message.content || "";
@@ -770,13 +221,15 @@ export const TextToDiagram = ({
         return;
       }
 
-      const tempDataRef = useRef<{
-        elements: readonly NonDeletedExcalidrawElement[];
-        files: BinaryFiles | null;
-      }>({ elements: [], files: null });
+      const tempDataRef = {
+        current: {
+          elements: [] as readonly NonDeletedExcalidrawElement[],
+          files: null as BinaryFiles | null,
+        },
+      };
 
       const result = await convertMermaidToExcalidraw({
-        canvasRef: someRandomDivRef,
+        canvasRef,
         data: tempDataRef,
         mermaidToExcalidrawLib,
         setError,
@@ -792,7 +245,7 @@ export const TextToDiagram = ({
         });
       }
     },
-    [app, mermaidToExcalidrawLib, someRandomDivRef, setError],
+    [app, mermaidToExcalidrawLib, setError, canvasRef],
   );
 
   const handleAiRepairClick = useCallback(
@@ -809,154 +262,12 @@ export const TextToDiagram = ({
 
       await onGenerate(repairPrompt, true);
     },
-    [onGenerate, ttdGeneration?.generatedResponse, setChatHistory],
+    [onGenerate, ttdGeneration?.generatedResponse],
   );
 
-  const applyChatToState = useCallback(
-    (chat: SavedChat) => {
-      setTtdSessionId(chat.sessionId);
-      const restoredMessages = chat.messages.map((msg) => ({
-        ...msg,
-        timestamp:
-          msg.timestamp instanceof Date
-            ? msg.timestamp
-            : new Date(msg.timestamp),
-      }));
-
-      setChatHistory({
-        messages: restoredMessages,
-        currentPrompt: "",
-      });
-      setTtdGeneration({
-        generatedResponse: chat.generatedResponse,
-        prompt: chat.currentPrompt,
-        validMermaidContent: chat.validMermaidContent || null,
-      });
-      if (chat.validMermaidContent || chat.generatedResponse) {
-        setShowPreview(true);
-      } else {
-        setShowPreview(false);
-      }
-
-      if (
-        rateLimits?.rateLimitRemaining === 0 &&
-        restoredMessages?.length > 0
-      ) {
-        const hasRateLimitMessage = restoredMessages.some(
-          (msg) =>
-            msg.type === "system" &&
-            msg.content.includes(t("chat.rateLimit.message")),
-        );
-
-        if (!hasRateLimitMessage) {
-          addMessage({
-            type: "system",
-            content: t("chat.rateLimit.message"),
-          });
-        }
-      }
-    },
-    [
-      setTtdSessionId,
-      setChatHistory,
-      setTtdGeneration,
-      rateLimits?.rateLimitRemaining,
-      addMessage,
-      t,
-    ],
-  );
-
-  const onRestoreChat = (chat: SavedChat) => {
-    const restoredChat = restoreChat(chat);
-    applyChatToState(restoredChat);
-
-    const contentToRender =
-      restoredChat.validMermaidContent || restoredChat.generatedResponse;
-
-    if (contentToRender) {
-      mermaidToExcalidrawLib.api.then(() => {
-        renderMermaid(contentToRender);
-      });
-    }
-
-    setIsMenuOpen(false);
-  };
-
-  const handleDeleteChat = useCallback(
-    (chatId: string, event: React.MouseEvent) => {
-      event.stopPropagation();
-
-      const isDeletingActiveChat = chatId === ttdSessionId;
-      const updatedChats = deleteChat(chatId);
-      if (isDeletingActiveChat) {
-        if (updatedChats.length > 0) {
-          const nextChat = updatedChats[0];
-          applyChatToState(nextChat);
-
-          const contentToRender =
-            nextChat.validMermaidContent || nextChat.generatedResponse;
-          if (contentToRender) {
-            if (mermaidToExcalidrawLib.loaded) {
-              renderMermaid(contentToRender);
-            } else {
-              mermaidToExcalidrawLib.api.then(() => {
-                renderMermaid(contentToRender);
-              });
-            }
-          }
-        } else {
-          resetChatState();
-        }
-      }
-    },
-    [
-      deleteChat,
-      ttdSessionId,
-      applyChatToState,
-      createNewChatId,
-      setTtdSessionId,
-      setChatHistory,
-      setTtdGeneration,
-      mermaidToExcalidrawLib,
-      renderMermaid,
-    ],
-  );
-
-  const handleAbort = () => {
-    if (streamingAbortControllerRef.current) {
-      streamingAbortControllerRef.current.abort();
-    }
-  };
-
-  const resetChatState = useCallback(() => {
-    const newSessionId = createNewChatId();
-    setTtdSessionId(newSessionId);
-    setChatHistory({
-      messages: [],
-      currentPrompt: "",
-    });
-    setTtdGeneration(null);
-    setError(null);
-    setShowPreview(false);
-    accumulatedContentRef.current = "";
-
-    const canvasNode = someRandomDivRef.current;
-    if (canvasNode) {
-      const parent = canvasNode.parentElement;
-      if (parent) {
-        parent.style.background = "";
-        canvasNode.replaceChildren();
-      }
-    }
-  }, [createNewChatId, setTtdSessionId, setChatHistory, setTtdGeneration]);
-
-  const handleNewChat = () => {
-    if (streamingAbortControllerRef.current) {
-      streamingAbortControllerRef.current.abort();
-    }
-    resetChatState();
-    setIsMenuOpen(false);
-  };
+  const handleInsertToEditor = useCallback(() => {
+    insertToEditor({ app, data });
+  }, [app, data]);
 
   return (
     <div
@@ -966,151 +277,57 @@ export const TextToDiagram = ({
           : "ttd-dialog-layout--chat-only"
       }`}
     >
-      <TTDDialogPanel
-        label={
-          <div className="ttd-dialog-panel__label-wrapper">
-            <div className="ttd-dialog-panel__label-group">
-              <label>{t("chat.label")}</label>
-              <Tooltip label={t("chat.helpTooltip")} long>
-                <button
-                  type="button"
-                  aria-label={t("chat.helpAriaLabel")}
-                  className="ttd-dialog-info"
-                >
-                  {HelpIconThin}
-                </button>
-              </Tooltip>
-            </div>
-            <div className="ttd-dialog-panel__header-right">
-              {rateLimits && (
-                <div className="ttd-dialog-panel__rate-limit">
-                  {t("chat.rateLimitRemaining", {
-                    count: rateLimits.rateLimitRemaining,
-                  })}
-                </div>
-              )}
-              <div className="ttd-dialog-panel__menu-wrapper">
-                <DropdownMenu open={isMenuOpen}>
-                  <DropdownMenu.Trigger
-                    onToggle={() => setIsMenuOpen(!isMenuOpen)}
-                    className="ttd-dialog-menu-trigger"
-                    disabled={onTextSubmitInProgess}
-                    title={t("chat.menu")}
-                    aria-label={t("chat.menu")}
-                  >
-                    {HamburgerMenuIcon}
-                  </DropdownMenu.Trigger>
-                  <DropdownMenu.Content
-                    onClickOutside={() => setIsMenuOpen(false)}
-                    onSelect={() => setIsMenuOpen(false)}
-                    placement="bottom"
-                  >
-                    <DropdownMenu.Item onSelect={handleNewChat}>
-                      {t("chat.newChat")}
-                    </DropdownMenu.Item>
-                    {savedChats.length > 0 && (
-                      <>
-                        <DropdownMenu.Separator />
-                        {savedChats.map((chat) => (
-                          <DropdownMenu.ItemCustom
-                            key={chat.id}
-                            className={clsx("ttd-chat-menu-item", {
-                              "ttd-chat-menu-item--active":
-                                chat.id === ttdSessionId,
-                            })}
-                            onClick={() => {
-                              onRestoreChat(chat);
-                            }}
-                          >
-                            <span className="ttd-chat-menu-item__title">
-                              {chat.title}
-                            </span>
-                            <button
-                              className="ttd-chat-menu-item__delete"
-                              onClick={(e) => handleDeleteChat(chat.id, e)}
-                              title={t("chat.deleteChat")}
-                              aria-label={t("chat.deleteChat")}
-                              type="button"
-                            >
-                              {TrashIcon}
-                            </button>
-                          </DropdownMenu.ItemCustom>
-                        ))}
-                      </>
-                    )}
-                  </DropdownMenu.Content>
-                </DropdownMenu>
-              </div>
-            </div>
-          </div>
-        }
-        className="ttd-dialog-chat-panel"
-        panelActionOrientation="right"
-        panelAction={
-          !!ttdGeneration?.validMermaidContent
-            ? {
-                action: onViewAsMermaid,
-                label: t("chat.viewAsMermaid"),
-                icon: <InlineIcon icon={ArrowRightIcon} />,
-                variant: "link",
-              }
-            : undefined
-        }
-      >
-        <ChatInterface
-          messages={chatHistory.messages}
-          currentPrompt={chatHistory.currentPrompt}
-          onPromptChange={handlePromptChange}
-          onSendMessage={onGenerate}
-          isGenerating={onTextSubmitInProgess}
-          generatedResponse={ttdGeneration?.generatedResponse}
-          onAbort={handleAbort}
-          onMermaidTabClick={handleMermaidTabClick}
-          onAiRepairClick={handleAiRepairClick}
-          onDeleteMessage={handleDeleteMessage}
-          onInsertMessage={handleInsertMessage}
-          placeholder={{
-            title: t("chat.placeholder.title"),
-            description: t("chat.placeholder.description"),
-          }}
-        />
-      </TTDDialogPanel>
-      <TTDDialogPanel
-        label={t("chat.preview")}
-        panelActionOrientation="right"
-        panelAction={
-          showPreview
-            ? {
-                action: () => {
-                  insertToEditor({ app, data });
-                },
-                label: t("chat.insert"),
-                icon: ArrowRightIcon,
-              }
-            : undefined
-        }
-        renderTopRight={() => (
-          <button
-            onClick={onReplay}
-            disabled={onTextSubmitInProgess || mockChunks.length === 0}
-            className="ttd-replay-button"
-            type="button"
-            title="Replay"
-          >
-            Replay
-          </button>
-        )}
-        className={`ttd-dialog-preview-panel ${
-          showPreview ? "" : "ttd-dialog-preview-panel--hidden"
-        }`}
-      >
-        <TTDDialogOutput
-          canvasRef={someRandomDivRef}
-          error={error}
-          loaded={mermaidToExcalidrawLib.loaded}
-        />
-      </TTDDialogPanel>
+      <TTDChatPanel
+        messages={chatHistory.messages}
+        currentPrompt={chatHistory.currentPrompt}
+        onPromptChange={handlePromptChange}
+        onSendMessage={onGenerate}
+        isGenerating={isGenerating}
+        generatedResponse={ttdGeneration?.generatedResponse}
+        isMenuOpen={isMenuOpen}
+        onMenuToggle={handleMenuToggle}
+        onMenuClose={handleMenuClose}
+        onNewChat={handleNewChat}
+        onRestoreChat={onRestoreChat}
+        onDeleteChat={handleDeleteChat}
+        savedChats={savedChats}
+        activeSessionId={ttdSessionId}
+        rateLimits={rateLimits}
+        onAbort={handleAbort}
+        onMermaidTabClick={handleMermaidTabClick}
+        onAiRepairClick={handleAiRepairClick}
+        onDeleteMessage={handleDeleteMessage}
+        onInsertMessage={handleInsertMessage}
+        hasValidMermaidContent={!!ttdGeneration?.validMermaidContent}
+        onViewAsMermaid={onViewAsMermaid}
+      />
+      <TTDPreviewPanel
+        canvasRef={canvasRef}
+        error={error}
+        loaded={mermaidToExcalidrawLib.loaded}
+        showPreview={showPreview}
+        onInsert={handleInsertToEditor}
+        onReplay={onReplay}
+        isReplayDisabled={isGenerating || mockChunks.length === 0}
+      />
     </div>
+  );
+};
+
+export const TextToDiagram = ({
+  mermaidToExcalidrawLib,
+  onTextSubmit,
+}: {
+  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
+  onTextSubmit(payload: TTDPayload): Promise<OnTestSubmitRetValue>;
+}) => {
+  return (
+    <TTDProvider
+      mermaidToExcalidrawLib={mermaidToExcalidrawLib}
+      onTextSubmit={onTextSubmit}
+    >
+      <TextToDiagramContent />
+    </TTDProvider>
   );
 };
 
