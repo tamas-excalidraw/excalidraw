@@ -88,7 +88,6 @@ export const convertMermaidToExcalidraw = async ({
         );
       }
     } catch (err: unknown) {
-      console.log("### invalid diagram");
       return { success: false, error: err as Error };
     }
 
