@@ -1,7 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef } from "react";
 import throttle from "lodash.throttle";
+import { useAtom } from "../../../editor-jotai";
+import type { MermaidToExcalidrawLibProps } from "../common";
+import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
+import type { BinaryFiles } from "../../../types";
 
-import { useTTDContext } from "../TTDContext";
+import { errorAtom, ttdGenerationAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 
@@ -11,14 +15,22 @@ interface ThrottledFunction {
   cancel: () => void;
 }
 
-export const useMermaidRenderer = () => {
-  const {
-    mermaidToExcalidrawLib,
-    canvasRef,
-    data,
-    setError,
-    setTtdGeneration,
-  } = useTTDContext();
+interface UseMermaidRendererProps {
+  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+  data: React.MutableRefObject<{
+    elements: readonly NonDeletedExcalidrawElement[];
+    files: BinaryFiles | null;
+  }>;
+}
+
+export const useMermaidRenderer = ({
+  mermaidToExcalidrawLib,
+  canvasRef,
+  data,
+}: UseMermaidRendererProps) => {
+  const [, setError] = useAtom(errorAtom);
+  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
 
   const isRenderingRef = useRef(false);
   const pendingRenderContentRef = useRef<string | null>(null);

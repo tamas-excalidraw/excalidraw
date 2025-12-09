@@ -6,7 +6,7 @@ type AddMessageFn = (
   message: Omit<ChatMessageType, "id" | "timestamp">,
 ) => void;
 
-const chatHistoryAtom = atom<ChatHistory>({
+export const chatHistoryAtom = atom<ChatHistory>({
   messages: [],
   currentPrompt: "",
 });

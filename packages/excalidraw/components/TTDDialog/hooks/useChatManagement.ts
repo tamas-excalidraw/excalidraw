@@ -1,8 +1,20 @@
 import { useCallback, useState } from "react";
+import { useAtom } from "../../../editor-jotai";
+import { randomId } from "@excalidraw/common";
 
 import { t } from "../../../i18n";
 
-import { useTTDContext } from "../TTDContext";
+import {
+  errorAtom,
+  showPreviewAtom,
+  rateLimitsAtom,
+  ttdGenerationAtom,
+  ttdSessionIdAtom,
+} from "../TTDContext";
+import { chatHistoryAtom } from "../../Chat/useChatAgent";
+import { useTTDChatStorage } from "../useTTDChatStorage";
+import type { ChatMessageType } from "../../Chat";
+import type { MermaidToExcalidrawLibProps } from "../common";
 
 import type { SavedChat } from "../useTTDChatStorage";
 
@@ -10,28 +22,42 @@ interface UseChatManagementProps {
   accumulatedContentRef: React.MutableRefObject<string>;
   renderMermaid: (content: string) => Promise<boolean>;
   handleAbort: () => void;
+  canvasRef: React.RefObject<HTMLDivElement | null>;
+  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
 }
 
 export const useChatManagement = ({
   accumulatedContentRef,
   renderMermaid,
   handleAbort,
+  canvasRef,
+  mermaidToExcalidrawLib,
 }: UseChatManagementProps) => {
-  const {
-    createNewChatId,
-    setTtdSessionId,
-    setChatHistory,
-    setTtdGeneration,
-    setError,
-    setShowPreview,
-    canvasRef,
-    restoreChat,
-    deleteChat,
-    mermaidToExcalidrawLib,
-    ttdSessionId,
-    rateLimits,
-    addMessage,
-  } = useTTDContext();
+  const [, setError] = useAtom(errorAtom);
+  const [, setShowPreview] = useAtom(showPreviewAtom);
+  const [, setTtdSessionId] = useAtom(ttdSessionIdAtom);
+  const [, setChatHistory] = useAtom(chatHistoryAtom);
+  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
+  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
+  const [rateLimits] = useAtom(rateLimitsAtom);
+
+  const { restoreChat, deleteChat, createNewChatId } = useTTDChatStorage();
+
+  const addMessage = useCallback(
+    (message: Omit<ChatMessageType, "id" | "timestamp">) => {
+      const newMessage: ChatMessageType = {
+        ...message,
+        id: randomId(),
+        timestamp: new Date(),
+      };
+
+      setChatHistory((prev) => ({
+        ...prev,
+        messages: [...prev.messages, newMessage],
+      }));
+    },
+    [setChatHistory],
+  );
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 

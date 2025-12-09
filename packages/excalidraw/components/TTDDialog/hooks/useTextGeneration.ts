@@ -1,13 +1,24 @@
 import { useCallback, useRef, useState } from "react";
 import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
 import { isFiniteNumber } from "@excalidraw/math";
+import { useAtom } from "../../../editor-jotai";
 
 import { trackEvent } from "../../../analytics";
 import { t } from "../../../i18n";
 
-import { useTTDContext } from "../TTDContext";
+import {
+  errorAtom,
+  showPreviewAtom,
+  rateLimitsAtom,
+  ttdGenerationAtom,
+  ttdSessionIdAtom,
+} from "../TTDContext";
+import { chatHistoryAtom } from "../../Chat/useChatAgent";
+import { useChatAgent } from "../../Chat";
+import { useTTDChatStorage } from "../useTTDChatStorage";
 
 import type { ChatMessageType } from "../../Chat";
+import type { TTDPayload, OnTestSubmitRetValue } from "../types";
 
 interface ThrottledFunction {
   (content: string): Promise<void>;
@@ -36,6 +47,10 @@ interface UseTextGenerationProps {
 const MIN_PROMPT_LENGTH = 3;
 const MAX_PROMPT_LENGTH = 10000;
 
+interface UseTextGenerationFullProps extends UseTextGenerationProps {
+  onTextSubmit: (payload: TTDPayload) => Promise<OnTestSubmitRetValue>;
+}
+
 export const useTextGeneration = ({
   getMessagesForApi,
   addMessage,
@@ -46,20 +61,21 @@ export const useTextGeneration = ({
   fastThrottledRenderMermaid,
   shouldThrottleRef,
   resetThrottleState,
-}: UseTextGenerationProps) => {
+  onTextSubmit,
+}: UseTextGenerationFullProps) => {
+  const [, setError] = useAtom(errorAtom);
+  const [, setShowPreview] = useAtom(showPreviewAtom);
+  const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
+  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
+
   const {
-    onTextSubmit,
     addUserAndPendingAssistant,
     setAssistantError,
     updateAssistantContent,
-    setChatHistory,
-    setTtdGeneration,
-    setError,
-    setShowPreview,
-    saveCurrentChat,
-    rateLimits,
-    setRateLimits,
-  } = useTTDContext();
+  } = useChatAgent();
+
+  const { saveCurrentChat } = useTTDChatStorage();
 
   const [isGenerating, setIsGenerating] = useState(false);
   const accumulatedContentRef = useRef("");

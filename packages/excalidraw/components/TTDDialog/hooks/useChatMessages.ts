@@ -1,7 +1,8 @@
 import { useCallback } from "react";
 import { findLastIndex, randomId } from "@excalidraw/common";
+import { useAtom } from "../../../editor-jotai";
 
-import { useTTDContext } from "../TTDContext";
+import { chatHistoryAtom } from "../../Chat/useChatAgent";
 
 import type { ChatMessageType } from "../../Chat";
 
@@ -10,7 +11,7 @@ interface UseChatMessagesProps {
 }
 
 export const useChatMessages = ({ renderMermaid }: UseChatMessagesProps) => {
-  const { chatHistory, setChatHistory } = useTTDContext();
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
   const addMessage = useCallback(
     (message: Omit<ChatMessageType, "id" | "timestamp">) => {

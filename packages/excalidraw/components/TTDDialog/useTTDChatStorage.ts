@@ -1,6 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import { randomId } from "@excalidraw/common";
-import type { ChatMessageType, ChatHistory } from "../Chat";
+import { useAtom } from "../../editor-jotai";
+import type { ChatMessageType } from "../Chat";
+
+import { ttdSessionIdAtom, ttdGenerationAtom } from "./TTDContext";
+import { chatHistoryAtom } from "../Chat/useChatAgent";
 
 const TTD_CHATS_STORAGE_KEY = "excalidraw-ttd-chats";
 
@@ -13,16 +17,6 @@ export interface SavedChat {
   generatedResponse: string | null;
   validMermaidContent: string | null;
   timestamp: number;
-}
-
-export interface UseTTDChatStorageParams {
-  chatHistory: ChatHistory;
-  ttdSessionId: string;
-  ttdGeneration: {
-    generatedResponse: string | null;
-    prompt: string | null;
-    validMermaidContent: string | null;
-  } | null;
 }
 
 export interface UseTTDChatStorageReturn {
@@ -63,11 +57,10 @@ const generateChatTitle = (firstMessage: string): string => {
   return trimmed.substring(0, 47) + "...";
 };
 
-export const useTTDChatStorage = ({
-  chatHistory,
-  ttdSessionId,
-  ttdGeneration,
-}: UseTTDChatStorageParams): UseTTDChatStorageReturn => {
+export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
+  const [chatHistory] = useAtom(chatHistoryAtom);
+  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
+  const [ttdGeneration] = useAtom(ttdGenerationAtom);
   const [savedChats, setSavedChats] = useState<SavedChats>([]);
 
   useEffect(() => {

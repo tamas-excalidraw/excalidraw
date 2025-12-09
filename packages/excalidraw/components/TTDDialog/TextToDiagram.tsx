@@ -1,4 +1,5 @@
-import { useEffect, useCallback } from "react";
+import { useEffect, useCallback, useRef } from "react";
+import { useAtom } from "../../editor-jotai";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
@@ -10,7 +11,16 @@ import {
   insertToEditor,
   saveMermaidDataToStorage,
 } from "./common";
-import { TTDProvider, useTTDContext } from "./TTDContext";
+import {
+  showPreviewAtom,
+  errorAtom,
+  ttdSessionIdAtom,
+  ttdGenerationAtom,
+  rateLimitsAtom,
+} from "./TTDContext";
+import { chatHistoryAtom } from "../Chat/useChatAgent";
+import { useChatAgent } from "../Chat";
+import { useTTDChatStorage } from "./useTTDChatStorage";
 import { useMermaidRenderer } from "./hooks/useMermaidRenderer";
 import { useChatMessages } from "./hooks/useChatMessages";
 import { useTextGeneration } from "./hooks/useTextGeneration";
@@ -26,25 +36,33 @@ import type { TTDPayload, OnTestSubmitRetValue } from "./types";
 
 export type { OnTestSubmitRetValue, TTDPayload };
 
-const TextToDiagramContent = () => {
+interface TextToDiagramContentProps {
+  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
+  onTextSubmit: (payload: TTDPayload) => Promise<OnTestSubmitRetValue>;
+}
+
+const TextToDiagramContent = ({
+  mermaidToExcalidrawLib,
+  onTextSubmit,
+}: TextToDiagramContentProps) => {
   const app = useApp();
   const setAppState = useExcalidrawSetAppState();
 
-  const {
-    mermaidToExcalidrawLib,
-    showPreview,
-    setShowPreview,
-    error,
-    setError,
-    ttdSessionId,
-    ttdGeneration,
-    rateLimits,
-    canvasRef,
-    data,
-    chatHistory,
-    savedChats,
-    updateAssistantContent,
-  } = useTTDContext();
+  const [showPreview, setShowPreview] = useAtom(showPreviewAtom);
+  const [error, setError] = useAtom(errorAtom);
+  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
+  const [ttdGeneration] = useAtom(ttdGenerationAtom);
+  const [rateLimits] = useAtom(rateLimitsAtom);
+  const [chatHistory] = useAtom(chatHistoryAtom);
+
+  const canvasRef = useRef<HTMLDivElement>(null);
+  const data = useRef<{
+    elements: readonly NonDeletedExcalidrawElement[];
+    files: BinaryFiles | null;
+  }>({ elements: [], files: null });
+
+  const { updateAssistantContent } = useChatAgent();
+  const { savedChats } = useTTDChatStorage();
 
   const {
     renderMermaid,
@@ -53,7 +71,11 @@ const TextToDiagramContent = () => {
     shouldThrottleRef,
     isRenderingRef,
     resetThrottleState,
-  } = useMermaidRenderer();
+  } = useMermaidRenderer({
+    mermaidToExcalidrawLib,
+    canvasRef,
+    data,
+  });
 
   const {
     addMessage,
@@ -63,6 +85,13 @@ const TextToDiagramContent = () => {
     handlePromptChange,
     getMessagesForApi,
   } = useChatMessages({ renderMermaid });
+
+  const updateAssistantContentWithLastMessage = useCallback(
+    (chunk: string) => {
+      updateAssistantContent(updateLastMessage, chunk);
+    },
+    [updateAssistantContent, updateLastMessage],
+  );
 
   const { onGenerate, handleAbort, isGenerating, accumulatedContentRef } =
     useTextGeneration({
@@ -75,6 +104,7 @@ const TextToDiagramContent = () => {
       fastThrottledRenderMermaid,
       shouldThrottleRef,
       resetThrottleState,
+      onTextSubmit,
     });
 
   const {
@@ -88,6 +118,8 @@ const TextToDiagramContent = () => {
     accumulatedContentRef,
     renderMermaid,
     handleAbort,
+    canvasRef,
+    mermaidToExcalidrawLib,
   });
 
   useEffect(() => {
@@ -154,7 +186,7 @@ const TextToDiagramContent = () => {
     updateLastMessage({ content: "", isGenerating: true }, "assistant");
 
     for (const chunk of mockChunks) {
-      updateAssistantContent(updateLastMessage, chunk);
+      updateAssistantContentWithLastMessage(chunk);
       accumulatedContentRef.current += chunk;
       const content = accumulatedContentRef.current;
 
@@ -177,7 +209,7 @@ const TextToDiagramContent = () => {
     resetThrottleState,
     setShowPreview,
     updateLastMessage,
-    updateAssistantContent,
+    updateAssistantContentWithLastMessage,
     shouldThrottleRef,
     throttledRenderMermaid,
     fastThrottledRenderMermaid,
@@ -313,12 +345,10 @@ export const TextToDiagram = ({
   onTextSubmit(payload: TTDPayload): Promise<OnTestSubmitRetValue>;
 }) => {
   return (
-    <TTDProvider
+    <TextToDiagramContent
       mermaidToExcalidrawLib={mermaidToExcalidrawLib}
       onTextSubmit={onTextSubmit}
-    >
-      <TextToDiagramContent />
-    </TTDProvider>
+    />
   );
 };
 
