@@ -289,8 +289,6 @@ export const useTextGeneration = ({
         removeLastErrorMessage();
       }
 
-      saveCurrentChat();
-
       await parseMermaidToExcalidraw(generatedResponse ?? "");
 
       // do a final render, just to be sure
@@ -299,6 +297,7 @@ export const useTextGeneration = ({
     } catch (error: unknown) {
       handleError(error as Error, "parse");
     } finally {
+      saveCurrentChat();
       setIsGenerating(false);
       streamingAbortControllerRef.current = null;
     }

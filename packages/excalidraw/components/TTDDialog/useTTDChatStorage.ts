@@ -71,6 +71,10 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     setSavedChats(chats);
   }, []);
 
+  useEffect(() => {
+    saveCurrentChat();
+  }, [chatHistory?.messages?.length]);
+
   const saveCurrentChat = () => {
     if (chatHistory.messages.length === 0) {
       return;
