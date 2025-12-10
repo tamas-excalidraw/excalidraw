@@ -68,7 +68,7 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     setSavedChats(chats);
   }, []);
 
-  const saveCurrentChat = useCallback(() => {
+  const saveCurrentChat = () => {
     if (chatHistory.messages.length === 0) {
       return;
     }
@@ -123,21 +123,7 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
 
     setSavedChats(updatedChats);
     saveChatsToStorage(updatedChats);
-  }, [chatHistory, ttdSessionId, ttdGeneration]);
-
-  useEffect(() => {
-    if (chatHistory.messages.length === 0) {
-      return;
-    }
-
-    saveCurrentChat();
-  }, [
-    chatHistory.messages,
-    chatHistory.currentPrompt,
-    ttdSessionId,
-    ttdGeneration,
-    saveCurrentChat,
-  ]);
+  };
 
   const deleteChat = useCallback(
     (chatId: string): SavedChats => {

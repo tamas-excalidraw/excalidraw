@@ -1,6 +1,5 @@
 import { findLastIndex } from "@excalidraw/common";
 import { atom, useAtom } from "../../editor-jotai";
-import { useCallback } from "react";
 import type { ChatMessage as ChatMessageType, ChatHistory } from "./types";
 
 type AddMessageFn = (

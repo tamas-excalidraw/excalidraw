@@ -36,9 +36,7 @@ export const useMermaidRenderer = ({
 
   const isRenderingRef = useRef(false);
   const pendingRenderContentRef = useRef<string | null>(null);
-  const lastRenderRuntimeRef = useRef(0);
 
-  // Throttle state refs
   const lastRenderTimeRef = useRef(0);
   const pendingContentRef = useRef<string | null>(null);
   const hasErrorOffsetRef = useRef(false);
@@ -56,7 +54,6 @@ export const useMermaidRenderer = ({
     isRenderingRef.current = true;
     pendingRenderContentRef.current = null;
 
-    const startTime = performance.now();
     const result = await convertMermaidToExcalidraw({
       canvasRef,
       data,
@@ -64,9 +61,6 @@ export const useMermaidRenderer = ({
       setError,
       mermaidDefinition,
     });
-    const endTime = performance.now();
-    const runtime = endTime - startTime;
-    lastRenderRuntimeRef.current = runtime;
 
     if (result.success) {
       setTtdGeneration((s) => ({
@@ -84,10 +78,7 @@ export const useMermaidRenderer = ({
     const now = Date.now();
     const timeSinceLastRender = now - lastRenderTimeRef.current;
 
-    // Check if syntax is valid first
     if (!isValidMermaidSyntax(content)) {
-      // Invalid syntax - add small delay to avoid re-parsing immediately
-      // but only offset once per consecutive error sequence
       if (!hasErrorOffsetRef.current) {
         lastRenderTimeRef.current = Math.max(
           lastRenderTimeRef.current,
@@ -99,24 +90,20 @@ export const useMermaidRenderer = ({
       return;
     }
 
-    // Valid syntax - reset error offset flag
     hasErrorOffsetRef.current = false;
 
-    // If we're still within throttle window, store as pending
     if (timeSinceLastRender < THROTTLE_DELAY) {
       pendingContentRef.current = content;
       return;
     }
 
-    // Execute render
     pendingContentRef.current = null;
     const success = await renderMermaid(content);
-    // Update lastRenderTime AFTER render completes (includes parse + render time)
     lastRenderTimeRef.current = Date.now();
 
     if (!success) {
-      // Render failed - add small delay similar to parse failure
-      lastRenderTimeRef.current = lastRenderTimeRef.current - THROTTLE_DELAY + PARSE_FAIL_DELAY;
+      lastRenderTimeRef.current =
+        lastRenderTimeRef.current - THROTTLE_DELAY + PARSE_FAIL_DELAY;
       hasErrorOffsetRef.current = true;
     }
   };

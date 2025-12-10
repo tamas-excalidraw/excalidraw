@@ -22,7 +22,6 @@ export const TTDPreviewPanel = ({
   onReplay,
   isReplayDisabled,
 }: TTDPreviewPanelProps) => {
-  console.log("TTDPreviewPanel rendered");
   return (
     <TTDDialogPanel
       label={t("chat.preview")}
