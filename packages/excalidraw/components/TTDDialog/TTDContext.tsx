@@ -9,7 +9,6 @@ type TTDGeneration = {
   validMermaidContent: string | null;
 } | null;
 
-// Atoms for state management
 export const rateLimitsAtom = atom<RateLimits | null>(null);
 
 export const ttdGenerationAtom = atom<TTDGeneration>(null);

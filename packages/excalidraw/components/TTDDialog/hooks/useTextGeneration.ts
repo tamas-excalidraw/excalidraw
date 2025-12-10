@@ -242,7 +242,7 @@ export const useTextGeneration = ({
               { role: "user", content: promptWithContext },
             ],
             onChunk: (chunk: string) => {
-              updateAssistantContent(updateLastMessage, chunk);
+              updateAssistantContent(chunk);
               accumulatedContentRef.current += chunk;
               const content = accumulatedContentRef.current;
 

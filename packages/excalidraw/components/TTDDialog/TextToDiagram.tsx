@@ -86,13 +86,6 @@ const TextToDiagramContent = ({
     getMessagesForApi,
   } = useChatMessages({ renderMermaid });
 
-  const updateAssistantContentWithLastMessage = useCallback(
-    (chunk: string) => {
-      updateAssistantContent(updateLastMessage, chunk);
-    },
-    [updateAssistantContent, updateLastMessage],
-  );
-
   const { onGenerate, handleAbort, isGenerating, accumulatedContentRef } =
     useTextGeneration({
       getMessagesForApi,
@@ -186,7 +179,7 @@ const TextToDiagramContent = ({
     updateLastMessage({ content: "", isGenerating: true }, "assistant");
 
     for (const chunk of mockChunks) {
-      updateAssistantContentWithLastMessage(chunk);
+      updateAssistantContent(chunk);
       accumulatedContentRef.current += chunk;
       const content = accumulatedContentRef.current;
 
@@ -204,12 +197,12 @@ const TextToDiagramContent = ({
     fastThrottledRenderMermaid.flush();
     updateLastMessage({ isGenerating: false }, "assistant");
   }, [
+    chatHistory?.messages,
     isGenerating,
     accumulatedContentRef,
     resetThrottleState,
     setShowPreview,
     updateLastMessage,
-    updateAssistantContentWithLastMessage,
     shouldThrottleRef,
     throttledRenderMermaid,
     fastThrottledRenderMermaid,

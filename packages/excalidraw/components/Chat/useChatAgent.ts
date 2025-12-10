@@ -1,5 +1,6 @@
 import { findLastIndex } from "@excalidraw/common";
-import { atom, useAtom } from "jotai";
+import { atom, useAtom } from "../../editor-jotai";
+import { useCallback } from "react";
 import type { ChatMessage as ChatMessageType, ChatHistory } from "./types";
 
 type AddMessageFn = (
@@ -64,38 +65,29 @@ export const useChatAgent = () => {
     setError(new Error(errorMessage));
   };
 
-  const updateAssistantContent = (
-    updateLastMessage: (
-      updates: Partial<ChatMessageType>,
-      type?: ChatMessageType["type"],
-    ) => void,
-    chunk: string,
-  ) => {
+  const updateAssistantContent = (chunk: string) => {
     setChatHistory((prev) => {
-      const lastMessage = prev.messages[prev.messages.length - 1];
+      const lastAssistantIndex = findLastIndex(
+        prev.messages,
+        (msg) => msg.type === "assistant",
+      );
 
-      if (lastMessage?.type === "assistant") {
-        const updatedContent = (lastMessage.content || "") + chunk;
-
-        const updatedMessages = prev.messages.map((msg, index) =>
-          index === prev.messages.length - 1
-            ? { ...msg, content: updatedContent }
-            : msg,
-        );
-
-        updateLastMessage(
-          {
-            content: updatedContent,
-          },
-          "assistant",
-        );
-
-        return {
-          ...prev,
-          messages: updatedMessages,
-        };
+      if (lastAssistantIndex === -1) {
+        return prev;
       }
-      return prev;
+
+      const lastMessage = prev.messages[lastAssistantIndex];
+      const updatedMessages = prev.messages.slice();
+
+      updatedMessages[lastAssistantIndex] = {
+        ...lastMessage,
+        content: (lastMessage.content || "") + chunk,
+      };
+
+      return {
+        ...prev,
+        messages: updatedMessages,
+      };
     });
   };
 
