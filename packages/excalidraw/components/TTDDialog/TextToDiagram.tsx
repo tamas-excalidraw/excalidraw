@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { useAtom } from "../../editor-jotai";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
@@ -67,8 +67,6 @@ const TextToDiagramContent = ({
   const {
     renderMermaid,
     throttledRenderMermaid,
-    fastThrottledRenderMermaid,
-    shouldThrottleRef,
     isRenderingRef,
     resetThrottleState,
   } = useMermaidRenderer({
@@ -94,8 +92,6 @@ const TextToDiagramContent = ({
       removeLastErrorMessage,
       renderMermaid,
       throttledRenderMermaid,
-      fastThrottledRenderMermaid,
-      shouldThrottleRef,
       resetThrottleState,
       onTextSubmit,
     });
@@ -142,7 +138,6 @@ const TextToDiagramContent = ({
     }
   }, [
     mermaidToExcalidrawLib.loaded,
-    renderMermaid,
     isGenerating,
     ttdGeneration?.validMermaidContent,
     ttdGeneration?.generatedResponse,
@@ -167,7 +162,7 @@ const TextToDiagramContent = ({
   }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage]);
 
   // TODO:: just for testing
-  const onReplay = useCallback(async () => {
+  const onReplay = async () => {
     if (isGenerating || mockChunks.length === 0) {
       return;
     }
@@ -183,107 +178,83 @@ const TextToDiagramContent = ({
       accumulatedContentRef.current += chunk;
       const content = accumulatedContentRef.current;
 
-      if (shouldThrottleRef.current) {
-        throttledRenderMermaid(content);
-      } else {
-        fastThrottledRenderMermaid(content);
-      }
+      throttledRenderMermaid(content);
 
       const delay = Math.floor(Math.random() * 5) + 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
     throttledRenderMermaid.flush();
-    fastThrottledRenderMermaid.flush();
     updateLastMessage({ isGenerating: false }, "assistant");
-  }, [
-    chatHistory?.messages,
-    isGenerating,
-    accumulatedContentRef,
-    resetThrottleState,
-    setShowPreview,
-    updateLastMessage,
-    shouldThrottleRef,
-    throttledRenderMermaid,
-    fastThrottledRenderMermaid,
-  ]);
+  };
 
-  const onViewAsMermaid = useCallback(() => {
+  const onViewAsMermaid = () => {
     if (typeof ttdGeneration?.generatedResponse === "string") {
       saveMermaidDataToStorage(ttdGeneration.generatedResponse);
       setAppState({
         openDialog: { name: "ttd", tab: "mermaid" },
       });
     }
-  }, [ttdGeneration?.generatedResponse, setAppState]);
+  };
 
-  const handleMermaidTabClick = useCallback(
-    (message: ChatMessageType) => {
-      const mermaidContent = message.content || "";
-      if (mermaidContent) {
-        saveMermaidDataToStorage(mermaidContent);
-        setAppState({
-          openDialog: { name: "ttd", tab: "mermaid" },
-        });
-      }
-    },
-    [setAppState],
-  );
-
-  const handleInsertMessage = useCallback(
-    async (message: ChatMessageType) => {
-      const mermaidContent = message.content || "";
-      if (!mermaidContent.trim() || !mermaidToExcalidrawLib.loaded) {
-        return;
-      }
-
-      const tempDataRef = {
-        current: {
-          elements: [] as readonly NonDeletedExcalidrawElement[],
-          files: null as BinaryFiles | null,
-        },
-      };
-
-      const result = await convertMermaidToExcalidraw({
-        canvasRef,
-        data: tempDataRef,
-        mermaidToExcalidrawLib,
-        setError,
-        mermaidDefinition: mermaidContent,
+  const handleMermaidTabClick = (message: ChatMessageType) => {
+    const mermaidContent = message.content || "";
+    if (mermaidContent) {
+      saveMermaidDataToStorage(mermaidContent);
+      setAppState({
+        openDialog: { name: "ttd", tab: "mermaid" },
       });
+    }
+  };
 
-      if (result.success) {
-        insertToEditor({
-          app,
-          data: tempDataRef,
-          text: mermaidContent,
-          shouldSaveMermaidDataToStorage: true,
-        });
-      }
-    },
-    [app, mermaidToExcalidrawLib, setError, canvasRef],
-  );
+  const handleInsertMessage = async (message: ChatMessageType) => {
+    const mermaidContent = message.content || "";
+    if (!mermaidContent.trim() || !mermaidToExcalidrawLib.loaded) {
+      return;
+    }
 
-  const handleAiRepairClick = useCallback(
-    async (message: ChatMessageType) => {
-      const mermaidContent =
-        ttdGeneration?.generatedResponse || message.content || "";
-      const errorMessage = message.error || "";
+    const tempDataRef = {
+      current: {
+        elements: [] as readonly NonDeletedExcalidrawElement[],
+        files: null as BinaryFiles | null,
+      },
+    };
 
-      if (!mermaidContent) {
-        return;
-      }
+    const result = await convertMermaidToExcalidraw({
+      canvasRef,
+      data: tempDataRef,
+      mermaidToExcalidrawLib,
+      setError,
+      mermaidDefinition: mermaidContent,
+    });
 
-      const repairPrompt = `Fix the error in this Mermaid diagram. The diagram is:\n\n\`\`\`mermaid\n${mermaidContent}\n\`\`\`\n\nThe exception/error is: ${errorMessage}\n\nPlease fix the Mermaid syntax and regenerate a valid diagram.`;
+    if (result.success) {
+      insertToEditor({
+        app,
+        data: tempDataRef,
+        text: mermaidContent,
+        shouldSaveMermaidDataToStorage: true,
+      });
+    }
+  };
 
-      await onGenerate(repairPrompt, true);
-    },
-    [onGenerate, ttdGeneration?.generatedResponse],
-  );
+  const handleAiRepairClick = async (message: ChatMessageType) => {
+    const mermaidContent =
+      ttdGeneration?.generatedResponse || message.content || "";
+    const errorMessage = message.error || "";
 
-  const handleInsertToEditor = useCallback(() => {
+    if (!mermaidContent) {
+      return;
+    }
+
+    const repairPrompt = `Fix the error in this Mermaid diagram. The diagram is:\n\n\`\`\`mermaid\n${mermaidContent}\n\`\`\`\n\nThe exception/error is: ${errorMessage}\n\nPlease fix the Mermaid syntax and regenerate a valid diagram.`;
+
+    await onGenerate(repairPrompt, true);
+  };
+
+  const handleInsertToEditor = () => {
     insertToEditor({ app, data });
-  }, [app, data]);
+  };
 
   return (
     <div

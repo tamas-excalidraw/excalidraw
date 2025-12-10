@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useState } from "react";
 import { useAtom } from "../../../editor-jotai";
 import { randomId } from "@excalidraw/common";
 
@@ -43,25 +43,22 @@ export const useChatManagement = ({
 
   const { restoreChat, deleteChat, createNewChatId } = useTTDChatStorage();
 
-  const addMessage = useCallback(
-    (message: Omit<ChatMessageType, "id" | "timestamp">) => {
-      const newMessage: ChatMessageType = {
-        ...message,
-        id: randomId(),
-        timestamp: new Date(),
-      };
+  const addMessage = (message: Omit<ChatMessageType, "id" | "timestamp">) => {
+    const newMessage: ChatMessageType = {
+      ...message,
+      id: randomId(),
+      timestamp: new Date(),
+    };
 
-      setChatHistory((prev) => ({
-        ...prev,
-        messages: [...prev.messages, newMessage],
-      }));
-    },
-    [setChatHistory],
-  );
+    setChatHistory((prev) => ({
+      ...prev,
+      messages: [...prev.messages, newMessage],
+    }));
+  };
 
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const resetChatState = useCallback(() => {
+  const resetChatState = () => {
     const newSessionId = createNewChatId();
     setTtdSessionId(newSessionId);
     setChatHistory({
@@ -81,137 +78,100 @@ export const useChatManagement = ({
         canvasNode.replaceChildren();
       }
     }
-  }, [
-    createNewChatId,
-    setTtdSessionId,
-    setChatHistory,
-    setTtdGeneration,
-    setError,
-    setShowPreview,
-    accumulatedContentRef,
-    canvasRef,
-  ]);
+  };
 
-  const applyChatToState = useCallback(
-    (chat: SavedChat) => {
-      setTtdSessionId(chat.sessionId);
-      const restoredMessages = chat.messages.map((msg) => ({
-        ...msg,
-        timestamp:
-          msg.timestamp instanceof Date
-            ? msg.timestamp
-            : new Date(msg.timestamp),
-      }));
+  const applyChatToState = (chat: SavedChat) => {
+    setTtdSessionId(chat.sessionId);
+    const restoredMessages = chat.messages.map((msg) => ({
+      ...msg,
+      timestamp:
+        msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
+    }));
 
-      setChatHistory({
-        messages: restoredMessages,
-        currentPrompt: "",
-      });
-      setTtdGeneration({
-        generatedResponse: chat.generatedResponse,
-        prompt: chat.currentPrompt,
-        validMermaidContent: chat.validMermaidContent || null,
-      });
+    setChatHistory({
+      messages: restoredMessages,
+      currentPrompt: "",
+    });
+    setTtdGeneration({
+      generatedResponse: chat.generatedResponse,
+      prompt: chat.currentPrompt,
+      validMermaidContent: chat.validMermaidContent || null,
+    });
 
-      setShowPreview(!!chat.validMermaidContent || !!chat.generatedResponse);
+    setShowPreview(!!chat.validMermaidContent || !!chat.generatedResponse);
 
-      if (
-        rateLimits?.rateLimitRemaining === 0 &&
-        restoredMessages?.length > 0
-      ) {
-        const hasRateLimitMessage = restoredMessages.some(
-          (msg) =>
-            msg.type === "system" &&
-            msg.content.includes(t("chat.rateLimit.message")),
-        );
+    if (rateLimits?.rateLimitRemaining === 0 && restoredMessages?.length > 0) {
+      const hasRateLimitMessage = restoredMessages.some(
+        (msg) =>
+          msg.type === "system" &&
+          msg.content.includes(t("chat.rateLimit.message")),
+      );
 
-        if (!hasRateLimitMessage) {
-          addMessage({
-            type: "system",
-            content: t("chat.rateLimit.message"),
-          });
-        }
-      }
-    },
-    [
-      setTtdSessionId,
-      setChatHistory,
-      setTtdGeneration,
-      setShowPreview,
-      rateLimits?.rateLimitRemaining,
-      addMessage,
-    ],
-  );
-
-  const onRestoreChat = useCallback(
-    (chat: SavedChat) => {
-      const restoredChat = restoreChat(chat);
-      applyChatToState(restoredChat);
-
-      const contentToRender =
-        restoredChat.validMermaidContent || restoredChat.generatedResponse;
-
-      if (contentToRender) {
-        mermaidToExcalidrawLib.api.then(() => {
-          renderMermaid(contentToRender);
+      if (!hasRateLimitMessage) {
+        addMessage({
+          type: "system",
+          content: t("chat.rateLimit.message"),
         });
       }
+    }
+  };
 
-      setIsMenuOpen(false);
-    },
-    [restoreChat, applyChatToState, mermaidToExcalidrawLib.api, renderMermaid],
-  );
+  const onRestoreChat = (chat: SavedChat) => {
+    const restoredChat = restoreChat(chat);
+    applyChatToState(restoredChat);
 
-  const handleDeleteChat = useCallback(
-    (chatId: string, event: React.MouseEvent) => {
-      event.stopPropagation();
+    const contentToRender =
+      restoredChat.validMermaidContent || restoredChat.generatedResponse;
 
-      const isDeletingActiveChat = chatId === ttdSessionId;
-      const updatedChats = deleteChat(chatId);
-      if (isDeletingActiveChat) {
-        if (updatedChats.length > 0) {
-          const nextChat = updatedChats[0];
-          applyChatToState(nextChat);
+    if (contentToRender) {
+      mermaidToExcalidrawLib.api.then(() => {
+        renderMermaid(contentToRender);
+      });
+    }
 
-          const contentToRender =
-            nextChat.validMermaidContent || nextChat.generatedResponse;
-          if (contentToRender) {
-            if (mermaidToExcalidrawLib.loaded) {
+    setIsMenuOpen(false);
+  };
+
+  const handleDeleteChat = (chatId: string, event: React.MouseEvent) => {
+    event.stopPropagation();
+
+    const isDeletingActiveChat = chatId === ttdSessionId;
+    const updatedChats = deleteChat(chatId);
+    if (isDeletingActiveChat) {
+      if (updatedChats.length > 0) {
+        const nextChat = updatedChats[0];
+        applyChatToState(nextChat);
+
+        const contentToRender =
+          nextChat.validMermaidContent || nextChat.generatedResponse;
+        if (contentToRender) {
+          if (mermaidToExcalidrawLib.loaded) {
+            renderMermaid(contentToRender);
+          } else {
+            mermaidToExcalidrawLib.api.then(() => {
               renderMermaid(contentToRender);
-            } else {
-              mermaidToExcalidrawLib.api.then(() => {
-                renderMermaid(contentToRender);
-              });
-            }
+            });
           }
-        } else {
-          resetChatState();
         }
+      } else {
+        resetChatState();
       }
-    },
-    [
-      deleteChat,
-      ttdSessionId,
-      applyChatToState,
-      mermaidToExcalidrawLib,
-      renderMermaid,
-      resetChatState,
-    ],
-  );
+    }
+  };
 
-  const handleNewChat = useCallback(() => {
+  const handleNewChat = () => {
     handleAbort();
     resetChatState();
     setIsMenuOpen(false);
-  }, [handleAbort, resetChatState]);
+  };
 
-  const handleMenuToggle = useCallback(() => {
+  const handleMenuToggle = () => {
     setIsMenuOpen((prev) => !prev);
-  }, []);
+  };
 
-  const handleMenuClose = useCallback(() => {
+  const handleMenuClose = () => {
     setIsMenuOpen(false);
-  }, []);
+  };
 
   return {
     isMenuOpen,
