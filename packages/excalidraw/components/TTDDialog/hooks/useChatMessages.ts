@@ -5,14 +5,12 @@ import { useAtom } from "../../../editor-jotai";
 import { chatHistoryAtom } from "../../Chat/useChatAgent";
 
 import type { ChatMessageType } from "../../Chat";
-import { useTTDChatStorage } from "../useTTDChatStorage";
 
 interface UseChatMessagesProps {
   renderMermaid: (mermaidDefinition: string) => Promise<boolean>;
 }
 
 export const useChatMessages = ({ renderMermaid }: UseChatMessagesProps) => {
-  const { saveCurrentChat } = useTTDChatStorage();
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
   const addMessage = (message: Omit<ChatMessageType, "id" | "timestamp">) => {

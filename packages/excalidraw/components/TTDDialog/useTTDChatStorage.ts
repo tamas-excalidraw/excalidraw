@@ -1,7 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { randomId } from "@excalidraw/common";
 
-import { useAtom } from "../../editor-jotai";
+import { atom, useAtom } from "../../editor-jotai";
 
 import { chatHistoryAtom } from "../Chat/useChatAgent";
 
@@ -60,20 +60,17 @@ const generateChatTitle = (firstMessage: string): string => {
   return `${trimmed.substring(0, 47)}...`;
 };
 
+// Shared atom for saved chats - initialized once from localStorage
+export const savedChatsAtom = atom<SavedChats>(loadChatsFromStorage());
+
 export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
   const [chatHistory] = useAtom(chatHistoryAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [ttdGeneration] = useAtom(ttdGenerationAtom);
-  const [savedChats, setSavedChats] = useState<SavedChats>([]);
+  const [savedChats, setSavedChats] = useAtom(savedChatsAtom);
 
-  useEffect(() => {
-    const chats = loadChatsFromStorage();
-    setSavedChats(chats);
-  }, []);
-
-  useEffect(() => {
-    saveCurrentChat();
-  }, [chatHistory?.messages?.length]);
+  const lastMessageInHistory =
+    chatHistory?.messages[chatHistory?.messages.length - 1];
 
   const saveCurrentChat = () => {
     if (chatHistory.messages.length === 0) {
@@ -87,11 +84,12 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
       return;
     }
 
+    const title = generateChatTitle(firstUserMessage.content);
+
     const currentSavedChats = loadChatsFromStorage();
     const existingChat = currentSavedChats.find(
       (chat) => chat.id === ttdSessionId,
     );
-    const title = generateChatTitle(firstUserMessage.content);
 
     const messagesChanged =
       !existingChat ||
@@ -132,10 +130,18 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     saveChatsToStorage(updatedChats);
   };
 
+  useEffect(() => {
+    if (!lastMessageInHistory?.isGenerating) {
+      saveCurrentChat();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [lastMessageInHistory?.id, lastMessageInHistory?.isGenerating]);
+
   const deleteChat = (chatId: string): SavedChats => {
     const updatedChats = savedChats.filter((chat) => chat.id !== chatId);
     setSavedChats(updatedChats);
     saveChatsToStorage(updatedChats);
+
     return updatedChats;
   };
 
