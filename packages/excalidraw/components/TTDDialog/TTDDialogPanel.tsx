@@ -59,7 +59,11 @@ export const TTDDialogPanel = ({
             type="button"
           >
             {panelAction.label}
-            {panelAction.icon && <span className="ttd-dialog-panel-action-link__icon">{panelAction.icon}</span>}
+            {panelAction.icon && (
+              <span className="ttd-dialog-panel-action-link__icon">
+                {panelAction.icon}
+              </span>
+            )}
           </button>
         ) : (
           <Button

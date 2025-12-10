@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
 import { isFiniteNumber } from "@excalidraw/math";
+
 import { useAtom } from "../../../editor-jotai";
 
 import { trackEvent } from "../../../analytics";

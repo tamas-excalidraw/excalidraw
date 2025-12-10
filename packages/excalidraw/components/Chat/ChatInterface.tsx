@@ -1,10 +1,16 @@
-import React, { useRef, useEffect, FormEventHandler } from "react";
+import React, { useRef, useEffect } from "react";
 import { KEYS } from "@excalidraw/common";
+
 import { ArrowRightIcon, stop as StopIcon } from "../icons";
 import { InlineIcon } from "../InlineIcon";
-import { ChatMessage } from "./ChatMessage";
-import { ChatInterfaceProps } from "./types";
+
 import { t } from "../../i18n";
+
+import { ChatMessage } from "./ChatMessage";
+
+import type { ChatInterfaceProps } from "./types";
+
+import type { FormEventHandler } from "react";
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   messages,
@@ -63,7 +69,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   const onInput: FormEventHandler<HTMLTextAreaElement> = (ev) => {
     const target = ev.target as HTMLTextAreaElement;
     target.style.height = "auto";
-    target.style.height = Math.min(target.scrollHeight, 120) + "px";
+    target.style.height = `${Math.min(target.scrollHeight, 120)}px`;
   };
 
   return (

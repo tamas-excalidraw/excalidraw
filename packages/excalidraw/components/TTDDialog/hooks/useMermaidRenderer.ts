@@ -1,12 +1,15 @@
 import { useEffect, useRef } from "react";
-import { useAtom } from "../../../editor-jotai";
-import type { MermaidToExcalidrawLibProps } from "../common";
+
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
-import type { BinaryFiles } from "../../../types";
+
+import { useAtom } from "../../../editor-jotai";
 
 import { errorAtom, ttdGenerationAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
+
+import type { BinaryFiles } from "../../../types";
+import type { MermaidToExcalidrawLibProps } from "../common";
 
 const THROTTLE_DELAY = 3000;
 const PARSE_FAIL_DELAY = 100;
@@ -131,6 +134,7 @@ export const useMermaidRenderer = ({
     return () => {
       throttledRenderMermaid.cancel();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return {

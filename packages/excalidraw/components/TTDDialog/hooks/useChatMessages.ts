@@ -1,4 +1,5 @@
 import { findLastIndex, randomId } from "@excalidraw/common";
+
 import { useAtom } from "../../../editor-jotai";
 
 import { chatHistoryAtom } from "../../Chat/useChatAgent";

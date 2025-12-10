@@ -1,10 +1,15 @@
 import { useEffect, useRef } from "react";
-import { useAtom } from "../../editor-jotai";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
+import { useAtom } from "../../editor-jotai";
+
 import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
+
+import { chatHistoryAtom } from "../Chat/useChatAgent";
+
+import { useChatAgent } from "../Chat";
 
 import {
   convertMermaidToExcalidraw,
@@ -18,8 +23,7 @@ import {
   ttdGenerationAtom,
   rateLimitsAtom,
 } from "./TTDContext";
-import { chatHistoryAtom } from "../Chat/useChatAgent";
-import { useChatAgent } from "../Chat";
+
 import { useTTDChatStorage } from "./useTTDChatStorage";
 import { useMermaidRenderer } from "./hooks/useMermaidRenderer";
 import { useChatMessages } from "./hooks/useChatMessages";
@@ -136,6 +140,7 @@ const TextToDiagramContent = ({
         renderMermaid(contentToRender);
       }
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     mermaidToExcalidrawLib.loaded,
     isGenerating,

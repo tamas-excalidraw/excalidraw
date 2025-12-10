@@ -1,6 +1,8 @@
 import { useState } from "react";
-import { useAtom } from "../../../editor-jotai";
+
 import { randomId } from "@excalidraw/common";
+
+import { useAtom } from "../../../editor-jotai";
 
 import { t } from "../../../i18n";
 
@@ -13,6 +15,7 @@ import {
 } from "../TTDContext";
 import { chatHistoryAtom } from "../../Chat/useChatAgent";
 import { useTTDChatStorage } from "../useTTDChatStorage";
+
 import type { ChatMessageType } from "../../Chat";
 import type { MermaidToExcalidrawLibProps } from "../common";
 

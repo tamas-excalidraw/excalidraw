@@ -1,5 +1,7 @@
 import { findLastIndex } from "@excalidraw/common";
+
 import { atom, useAtom } from "../../editor-jotai";
+
 import type { ChatMessage as ChatMessageType, ChatHistory } from "./types";
 
 type AddMessageFn = (

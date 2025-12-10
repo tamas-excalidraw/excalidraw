@@ -4,6 +4,7 @@ import { Tooltip } from "../../Tooltip";
 import { ChatInterface } from "../../Chat";
 import { InlineIcon } from "../../InlineIcon";
 import { TTDDialogPanel } from "../TTDDialogPanel";
+
 import { ChatHistoryMenu } from "./ChatHistoryMenu";
 
 import type { ChatMessageType } from "../../Chat";

@@ -1,10 +1,13 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { randomId } from "@excalidraw/common";
+
 import { useAtom } from "../../editor-jotai";
-import type { ChatMessageType } from "../Chat";
+
+import { chatHistoryAtom } from "../Chat/useChatAgent";
 
 import { ttdSessionIdAtom, ttdGenerationAtom } from "./TTDContext";
-import { chatHistoryAtom } from "../Chat/useChatAgent";
+
+import type { ChatMessageType } from "../Chat";
 
 const TTD_CHATS_STORAGE_KEY = "excalidraw-ttd-chats";
 
@@ -54,7 +57,7 @@ const generateChatTitle = (firstMessage: string): string => {
   if (trimmed.length <= 50) {
     return trimmed;
   }
-  return trimmed.substring(0, 47) + "...";
+  return `${trimmed.substring(0, 47)}...`;
 };
 
 export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
@@ -125,28 +128,22 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     saveChatsToStorage(updatedChats);
   };
 
-  const deleteChat = useCallback(
-    (chatId: string): SavedChats => {
-      const updatedChats = savedChats.filter((chat) => chat.id !== chatId);
-      setSavedChats(updatedChats);
-      saveChatsToStorage(updatedChats);
-      return updatedChats;
-    },
-    [savedChats],
-  );
+  const deleteChat = (chatId: string): SavedChats => {
+    const updatedChats = savedChats.filter((chat) => chat.id !== chatId);
+    setSavedChats(updatedChats);
+    saveChatsToStorage(updatedChats);
+    return updatedChats;
+  };
 
-  const restoreChat = useCallback(
-    (chat: SavedChat): SavedChat => {
-      saveCurrentChat();
-      return chat;
-    },
-    [saveCurrentChat],
-  );
+  const restoreChat = (chat: SavedChat): SavedChat => {
+    saveCurrentChat();
+    return chat;
+  };
 
-  const createNewChatId = useCallback((): string => {
+  const createNewChatId = (): string => {
     saveCurrentChat();
     return randomId();
-  }, [saveCurrentChat]);
+  };
 
   return {
     savedChats,

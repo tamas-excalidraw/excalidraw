@@ -1,8 +1,10 @@
 import React from "react";
-import { ChatMessage as ChatMessageType } from "./types";
+
 import { t } from "../../i18n";
 import { FilledButton } from "../FilledButton";
 import { TrashIcon, mermaidLogoIcon, TableExportIcon } from "../icons";
+
+import type { ChatMessage as ChatMessageType } from "./types";
 
 interface ChatMessageProps {
   message: ChatMessageType;
