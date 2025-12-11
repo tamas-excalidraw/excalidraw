@@ -43,6 +43,7 @@ export const useChatManagement = ({
   const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { restoreChat, deleteChat, createNewChatId } = useTTDChatStorage();
 
@@ -58,8 +59,6 @@ export const useChatManagement = ({
       messages: [...prev.messages, newMessage],
     }));
   };
-
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const resetChatState = () => {
     const newSessionId = createNewChatId();
@@ -127,9 +126,7 @@ export const useChatManagement = ({
       restoredChat.validMermaidContent || restoredChat.generatedResponse;
 
     if (contentToRender) {
-      mermaidToExcalidrawLib.api.then(() => {
-        renderMermaid(contentToRender);
-      });
+      renderMermaid(contentToRender);
     }
 
     setIsMenuOpen(false);
@@ -150,10 +147,6 @@ export const useChatManagement = ({
         if (contentToRender) {
           if (mermaidToExcalidrawLib.loaded) {
             renderMermaid(contentToRender);
-          } else {
-            mermaidToExcalidrawLib.api.then(() => {
-              renderMermaid(contentToRender);
-            });
           }
         }
       } else {

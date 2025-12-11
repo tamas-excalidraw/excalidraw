@@ -62,7 +62,7 @@ export const useTextGeneration = ({
   const [, setError] = useAtom(errorAtom);
   const [, setShowPreview] = useAtom(showPreviewAtom);
   const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
-  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
+  const [ttdGeneration, setTtdGeneration] = useAtom(ttdGenerationAtom);
   const [, setChatHistory] = useAtom(chatHistoryAtom);
 
   const {
@@ -129,7 +129,7 @@ export const useTextGeneration = ({
     }
   };
 
-  const handleAbortedGeneration = () => {
+  const handleAbortedGeneration = async () => {
     const currentContent = accumulatedContentRef.current;
     if (currentContent) {
       setTtdGeneration((s) => ({
@@ -145,7 +145,7 @@ export const useTextGeneration = ({
         "assistant",
       );
       if (currentContent.trim()) {
-        renderMermaid(currentContent);
+        await renderMermaid(currentContent);
       }
     } else {
       updateLastMessage(
@@ -254,7 +254,7 @@ export const useTextGeneration = ({
           abortController.signal.aborted;
 
         if (isAborted) {
-          handleAbortedGeneration();
+          await handleAbortedGeneration();
           return;
         }
 
@@ -291,8 +291,6 @@ export const useTextGeneration = ({
 
       await parseMermaidToExcalidraw(generatedResponse ?? "");
 
-      // do a final render, just to be sure
-      renderMermaid(accumulatedContentRef.current);
       trackEvent("ai", "mermaid parse success", "ttd");
     } catch (error: unknown) {
       handleError(error as Error, "parse");

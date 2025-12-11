@@ -81,29 +81,31 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           {message.error ? (
             <div className="chat-message__error">
               {message.content}
-              <p>{t("chat.errors.invalidDiagram")}</p>
               {isMermaidError && (
-                <div className="chat-message__error-actions">
-                  {onMermaidTabClick && (
-                    <button
-                      className="chat-message__error-link"
-                      onClick={() => onMermaidTabClick(message)}
-                      type="button"
-                    >
-                      {t("chat.errors.fixInMermaid")}
-                    </button>
-                  )}
-                  {onAiRepairClick && (
-                    <button
-                      className="chat-message__error-link"
-                      onClick={() => onAiRepairClick(message)}
-                      disabled={rateLimitRemaining === 0}
-                      type="button"
-                    >
-                      {t("chat.errors.aiRepair")}
-                    </button>
-                  )}
-                </div>
+                <>
+                  <p>{t("chat.errors.invalidDiagram")}</p>
+                  <div className="chat-message__error-actions">
+                    {onMermaidTabClick && (
+                      <button
+                        className="chat-message__error-link"
+                        onClick={() => onMermaidTabClick(message)}
+                        type="button"
+                      >
+                        {t("chat.errors.fixInMermaid")}
+                      </button>
+                    )}
+                    {onAiRepairClick && (
+                      <button
+                        className="chat-message__error-link"
+                        onClick={() => onAiRepairClick(message)}
+                        disabled={rateLimitRemaining === 0}
+                        type="button"
+                      >
+                        {t("chat.errors.aiRepair")}
+                      </button>
+                    )}
+                  </div>
+                </>
               )}
             </div>
           ) : (
