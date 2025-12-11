@@ -284,7 +284,6 @@ const TextToDiagramContent = ({
         onDeleteChat={handleDeleteChat}
         savedChats={savedChats}
         activeSessionId={ttdSessionId}
-        rateLimits={rateLimits}
         onAbort={handleAbort}
         onMermaidTabClick={handleMermaidTabClick}
         onAiRepairClick={handleAiRepairClick}

@@ -9,7 +9,6 @@ import { ChatHistoryMenu } from "./ChatHistoryMenu";
 
 import type { ChatMessageType } from "../../Chat";
 import type { SavedChat } from "../useTTDChatStorage";
-import type { RateLimits } from "../types";
 
 interface TTDChatPanelProps {
   messages: ChatMessageType[];
@@ -27,8 +26,6 @@ interface TTDChatPanelProps {
   onDeleteChat: (chatId: string, event: React.MouseEvent) => void;
   savedChats: SavedChat[];
   activeSessionId: string;
-
-  rateLimits: RateLimits | null;
 
   onAbort: () => void;
   onMermaidTabClick: (message: ChatMessageType) => void;
@@ -55,7 +52,6 @@ export const TTDChatPanel = ({
   onDeleteChat,
   savedChats,
   activeSessionId,
-  rateLimits,
   onAbort,
   onMermaidTabClick,
   onAiRepairClick,
@@ -81,13 +77,6 @@ export const TTDChatPanel = ({
             </Tooltip>
           </div>
           <div className="ttd-dialog-panel__header-right">
-            {rateLimits && (
-              <div className="ttd-dialog-panel__rate-limit">
-                {t("chat.rateLimitRemaining", {
-                  count: rateLimits.rateLimitRemaining,
-                })}
-              </div>
-            )}
             <ChatHistoryMenu
               isOpen={isMenuOpen}
               onToggle={onMenuToggle}
