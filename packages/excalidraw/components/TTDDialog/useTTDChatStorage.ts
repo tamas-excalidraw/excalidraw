@@ -124,7 +124,9 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     const updatedChats = [
       ...currentSavedChats.filter((chat) => chat.id !== ttdSessionId),
       chatToSave,
-    ].sort((a, b) => b.timestamp - a.timestamp);
+    ]
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 10);
 
     setSavedChats(updatedChats);
     saveChatsToStorage(updatedChats);
