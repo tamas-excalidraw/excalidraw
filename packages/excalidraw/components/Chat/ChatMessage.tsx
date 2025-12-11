@@ -54,7 +54,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
                     );
                   }}
                 >
-                  Upgrade to Plus
+                  {t("chat.upsellBtnLabel")}
                 </FilledButton>
               </div>
             </div>
