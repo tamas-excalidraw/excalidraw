@@ -24,6 +24,17 @@ try {
 }
 ```
 
+## validateMermaid
+
+This API receives the mermaid diagram definition as the input, parses the text and validates it. It returns true if the diagram is valid, false otherwise.
+
+** Example **
+
+```ts
+import { validateMermaid } from "@excalidraw/mermaid-to-excalidraw";
+const isValidMermaidDiagramDefinition = await validateMermaid(mermaidSyntax)
+```
+
 ## Supported Diagram Types
 
 Currently only [flowcharts](https://mermaid.js.org/syntax/flowchart.html) are supported. Oother diagram types will be rendered as an image in Excalidraw.
