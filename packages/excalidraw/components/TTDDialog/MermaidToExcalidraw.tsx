@@ -129,13 +129,16 @@ const MermaidToExcalidraw = ({
         </TTDDialogPanel>
         <TTDDialogPanel
           label={t("mermaid.preview")}
-          panelAction={{
-            action: () => {
-              onInsertToEditor();
+          panelActions={[
+            {
+              action: () => {
+                onInsertToEditor();
+              },
+              label: t("mermaid.button"),
+              icon: ArrowRightIcon,
+              variant: "button",
             },
-            label: t("mermaid.button"),
-            icon: ArrowRightIcon,
-          }}
+          ]}
           renderSubmitShortcut={() => <TTDDialogSubmitShortcut />}
         >
           <TTDDialogOutput

@@ -9,6 +9,8 @@ import { ChatHistoryMenu } from "./ChatHistoryMenu";
 
 import type { ChatMessageType } from "../../Chat";
 import type { SavedChat } from "../useTTDChatStorage";
+import { useAtom } from "../../../editor-jotai";
+import { rateLimitsAtom } from "../TTDContext";
 
 interface TTDChatPanelProps {
   messages: ChatMessageType[];
@@ -60,6 +62,42 @@ export const TTDChatPanel = ({
   hasValidMermaidContent,
   onViewAsMermaid,
 }: TTDChatPanelProps) => {
+  const [rateLimits] = useAtom(rateLimitsAtom);
+
+  const getPanelActions = () => {
+    let actions = [];
+    if (rateLimits) {
+      actions.push({
+        label: t("chat.rateLimitRemaining", {
+          count: rateLimits.rateLimitRemaining,
+        }),
+        variant: "rateLimit" as const,
+      });
+    }
+    if (hasValidMermaidContent) {
+      actions.push({
+        action: onViewAsMermaid,
+        label: t("chat.viewAsMermaid"),
+        icon: <InlineIcon icon={ArrowRightIcon} />,
+        variant: "link" as const,
+      });
+    }
+
+    return actions;
+  };
+  const actions = getPanelActions();
+
+  const getPanelActionFlexProp = () => {
+    if (actions.length === 2) {
+      return "space-between";
+    }
+    if (actions.length === 1 && actions[0].variant === "rateLimit") {
+      return "flex-start";
+    }
+
+    return "flex-end";
+  };
+
   return (
     <TTDDialogPanel
       label={
@@ -92,17 +130,8 @@ export const TTDChatPanel = ({
         </div>
       }
       className="ttd-dialog-chat-panel"
-      panelActionOrientation="right"
-      panelAction={
-        hasValidMermaidContent
-          ? {
-              action: onViewAsMermaid,
-              label: t("chat.viewAsMermaid"),
-              icon: <InlineIcon icon={ArrowRightIcon} />,
-              variant: "link",
-            }
-          : undefined
-      }
+      panelActionJustifyContent={getPanelActionFlexProp()}
+      panelActions={actions}
     >
       <ChatInterface
         messages={messages}

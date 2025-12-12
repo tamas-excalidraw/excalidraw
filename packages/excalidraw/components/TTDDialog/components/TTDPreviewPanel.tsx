@@ -2,7 +2,6 @@ import { t } from "../../../i18n";
 import { ArrowRightIcon } from "../../icons";
 import { TTDDialogPanel } from "../TTDDialogPanel";
 import { TTDDialogOutput } from "../TTDDialogOutput";
-import { rateLimitsAtom } from "../TTDContext";
 import { useAtom } from "../../../editor-jotai";
 
 interface TTDPreviewPanelProps {
@@ -24,21 +23,10 @@ export const TTDPreviewPanel = ({
   onReplay,
   isReplayDisabled,
 }: TTDPreviewPanelProps) => {
-  const [rateLimits] = useAtom(rateLimitsAtom);
-
   const getPreviewLabel = () => {
     return (
       <div className="ttd-dialog-panel__header">
         <label>{t("chat.preview")}</label>
-        {rateLimits && (
-          <div className="ttd-dialog-panel__rate-limit">
-            (
-            {t("chat.rateLimitRemaining", {
-              count: rateLimits.rateLimitRemaining,
-            })}
-            )
-          </div>
-        )}
       </div>
     );
   };
@@ -46,14 +34,17 @@ export const TTDPreviewPanel = ({
   return (
     <TTDDialogPanel
       label={getPreviewLabel()}
-      panelActionOrientation="right"
-      panelAction={
+      panelActionJustifyContent="flex-end"
+      panelActions={
         showPreview
-          ? {
-              action: onInsert,
-              label: t("chat.insert"),
-              icon: ArrowRightIcon,
-            }
+          ? [
+              {
+                action: onInsert,
+                label: t("chat.insert"),
+                icon: ArrowRightIcon,
+                variant: "button",
+              },
+            ]
           : undefined
       }
       renderTopRight={() => (
