@@ -11,70 +11,35 @@ import {
   errorAtom,
   showPreviewAtom,
   rateLimitsAtom,
-  ttdGenerationAtom,
+  chatHistoryAtom,
 } from "../TTDContext";
-import { chatHistoryAtom } from "../../Chat/useChatAgent";
 import { useChatAgent } from "../../Chat";
-import { useTTDChatStorage } from "../useTTDChatStorage";
 
-import type { ChatMessageType } from "../../Chat";
 import type { TTDPayload, OnTestSubmitRetValue } from "../types";
-
-interface ThrottledFunction {
-  (content: string): Promise<void>;
-  flush: () => Promise<void>;
-  cancel: () => void;
-}
+import {
+  addMessages,
+  getLastAssistantMessage,
+  getMessagesForApi,
+  removeLastErrorMessage,
+  updateAssistantContent,
+} from "../utils/chat";
 
 interface UseTextGenerationProps {
-  getMessagesForApi: () => Array<{
-    role: "user" | "assistant" | "system";
-    content: string;
-  }>;
-  addMessage: (message: Omit<ChatMessageType, "id" | "timestamp">) => void;
-  updateLastMessage: (
-    updates: Partial<ChatMessageType>,
-    type?: ChatMessageType["type"],
-  ) => void;
-  removeLastErrorMessage: () => void;
-  renderMermaid: (mermaidDefinition: string) => Promise<boolean>;
-  throttledRenderMermaid: ThrottledFunction;
-  resetThrottleState: () => void;
+  onTextSubmit: (payload: TTDPayload) => Promise<OnTestSubmitRetValue>;
 }
 
 const MIN_PROMPT_LENGTH = 3;
 const MAX_PROMPT_LENGTH = 10000;
 
-interface UseTextGenerationFullProps extends UseTextGenerationProps {
-  onTextSubmit: (payload: TTDPayload) => Promise<OnTestSubmitRetValue>;
-}
-
-export const useTextGeneration = ({
-  getMessagesForApi,
-  addMessage,
-  updateLastMessage,
-  removeLastErrorMessage,
-  renderMermaid,
-  throttledRenderMermaid,
-  resetThrottleState,
-  onTextSubmit,
-}: UseTextGenerationFullProps) => {
+export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
   const [, setError] = useAtom(errorAtom);
   const [, setShowPreview] = useAtom(showPreviewAtom);
   const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
-  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
-  const [, setChatHistory] = useAtom(chatHistoryAtom);
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
-  const {
-    addUserAndPendingAssistant,
-    setAssistantError,
-    updateAssistantContent,
-  } = useChatAgent();
-
-  const { saveCurrentChat } = useTTDChatStorage();
+  const { addUserAndPendingAssistant, setAssistantError } = useChatAgent();
 
   const [isGenerating, setIsGenerating] = useState(false);
-  const accumulatedContentRef = useRef("");
   const streamingAbortControllerRef = useRef<AbortController | null>(null);
 
   const validatePrompt = (prompt: string): boolean => {
@@ -115,46 +80,30 @@ export const useTextGeneration = ({
         previousRemaining !== null &&
         previousRemaining > 0
       ) {
-        updateLastMessage(
-          {
+        setChatHistory(
+          updateAssistantContent(chatHistory, {
             isGenerating: false,
-          },
-          "assistant",
+          }),
         );
-        addMessage({
-          type: "system",
-          content: t("chat.rateLimit.message"),
-        });
+
+        setChatHistory((prev) =>
+          addMessages(prev, [
+            {
+              type: "system",
+              content: t("chat.rateLimit.message"),
+            },
+          ]),
+        );
       }
     }
   };
 
   const handleAbortedGeneration = async () => {
-    const currentContent = accumulatedContentRef.current;
-    if (currentContent) {
-      setTtdGeneration((s) => ({
-        generatedResponse: currentContent,
-        prompt: s?.prompt ?? null,
-        validMermaidContent: s?.validMermaidContent ?? null,
-      }));
-      updateLastMessage(
-        {
-          isGenerating: false,
-          content: currentContent,
-        },
-        "assistant",
-      );
-      if (currentContent.trim()) {
-        await renderMermaid(currentContent);
-      }
-    } else {
-      updateLastMessage(
-        {
-          isGenerating: false,
-        },
-        "assistant",
-      );
-    }
+    setChatHistory(
+      updateAssistantContent(chatHistory, {
+        isGenerating: false,
+      }),
+    );
   };
 
   const handleError = (error: Error, errorType: "parse") => {
@@ -162,13 +111,12 @@ export const useTextGeneration = ({
 
     if (errorType === "parse") {
       trackEvent("ai", "mermaid parse failed", "ttd");
-      updateLastMessage(
-        {
+      setChatHistory(
+        updateAssistantContent(chatHistory, {
           isGenerating: false,
           error: error.message,
           errorType: "parse",
-        },
-        "assistant",
+        }),
       );
       setError(new Error(message));
     }
@@ -182,24 +130,19 @@ export const useTextGeneration = ({
       return;
     }
 
-    setTtdGeneration((s) => ({
-      generatedResponse: s?.generatedResponse ?? null,
-      prompt: s?.prompt ?? null,
-      validMermaidContent: null,
-    }));
-
     if (isRepairFlow) {
-      addMessage({
-        type: "assistant",
-        content: "",
-        isGenerating: true,
-      });
+      setChatHistory(
+        addMessages(chatHistory, [
+          {
+            type: "assistant",
+            content: "",
+            isGenerating: true,
+          },
+        ]),
+      );
     } else {
-      addUserAndPendingAssistant(promptWithContext, addMessage);
+      addUserAndPendingAssistant(promptWithContext);
     }
-
-    accumulatedContentRef.current = "";
-    resetThrottleState();
 
     setShowPreview(true);
 
@@ -211,11 +154,9 @@ export const useTextGeneration = ({
     streamingAbortControllerRef.current = abortController;
 
     try {
-      setIsGenerating(true);
-
       trackEvent("ai", "generate", "ttd");
 
-      const filteredMessages = getMessagesForApi();
+      const filteredMessages = getMessagesForApi(chatHistory);
 
       const { generatedResponse, error, rateLimit, rateLimitRemaining } =
         await onTextSubmit({
@@ -224,26 +165,21 @@ export const useTextGeneration = ({
             { role: "user", content: promptWithContext },
           ],
           onChunk: (chunk: string) => {
-            updateAssistantContent(chunk);
-            accumulatedContentRef.current += chunk;
-            const content = accumulatedContentRef.current;
-
-            throttledRenderMermaid(content);
+            setChatHistory((prev) => {
+              const lastAssistantMessage = getLastAssistantMessage(prev);
+              return updateAssistantContent(prev, {
+                content: lastAssistantMessage.content + chunk,
+              });
+            });
           },
           signal: abortController.signal,
         });
 
-      throttledRenderMermaid.flush();
-
-      if (typeof generatedResponse === "string") {
-        setTtdGeneration((s) => ({
-          generatedResponse,
-          prompt: s?.prompt ?? null,
-          validMermaidContent: s?.validMermaidContent ?? null,
-        }));
-
-        accumulatedContentRef.current = generatedResponse;
-      }
+      setChatHistory((prev) =>
+        updateAssistantContent(prev, {
+          isGenerating: false,
+        }),
+      );
 
       handleRateLimits(rateLimit, rateLimitRemaining);
 
@@ -267,26 +203,21 @@ export const useTextGeneration = ({
             messages: prev.messages.slice(0, -1),
           }));
         } else {
-          setAssistantError(
-            updateLastMessage,
-            setError,
-            error.message,
-            "network",
-          );
+          setError(error);
+          setAssistantError(error.message, "network");
         }
         return;
       }
 
-      updateLastMessage(
-        {
-          isGenerating: false,
-          content: generatedResponse ?? "",
-        },
-        "assistant",
-      );
+      // setChatHistory(
+      //   updateAssistantContent(chatHistory, {
+      //     isGenerating: false,
+      //     content: generatedResponse ?? "",
+      //   }),
+      // );
 
       if (isRepairFlow) {
-        removeLastErrorMessage();
+        setChatHistory(removeLastErrorMessage(chatHistory));
       }
 
       await parseMermaidToExcalidraw(generatedResponse ?? "");
@@ -295,7 +226,6 @@ export const useTextGeneration = ({
     } catch (error: unknown) {
       handleError(error as Error, "parse");
     } finally {
-      saveCurrentChat();
       setIsGenerating(false);
       streamingAbortControllerRef.current = null;
     }
@@ -311,6 +241,5 @@ export const useTextGeneration = ({
     onGenerate,
     handleAbort,
     isGenerating,
-    accumulatedContentRef,
   };
 };

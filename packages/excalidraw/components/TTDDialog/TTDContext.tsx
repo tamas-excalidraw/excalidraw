@@ -1,12 +1,8 @@
 import { randomId } from "@excalidraw/common";
-import { createRef } from "react";
-
-import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
-
 import { atom } from "../../editor-jotai";
+import { ChatHistory } from "../Chat";
 
 import type { RateLimits } from "./types";
-import type { BinaryFiles } from "../../types";
 
 type TTDGeneration = {
   generatedResponse: string | null;
@@ -24,15 +20,7 @@ export const showPreviewAtom = atom<boolean>(false);
 
 export const errorAtom = atom<Error | null>(null);
 
-export const ttdCanvasRefAtom = atom<React.RefObject<HTMLDivElement | null>>(
-  createRef<HTMLDivElement>(),
-);
-
-export const ttdDataAtom = atom<
-  React.MutableRefObject<{
-    elements: readonly NonDeletedExcalidrawElement[];
-    files: BinaryFiles | null;
-  }>
->({
-  current: { elements: [], files: null },
+export const chatHistoryAtom = atom<ChatHistory>({
+  messages: [],
+  currentPrompt: "",
 });

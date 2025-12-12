@@ -3,9 +3,7 @@ import { randomId } from "@excalidraw/common";
 
 import { atom, useAtom } from "../../editor-jotai";
 
-import { chatHistoryAtom } from "../Chat/useChatAgent";
-
-import { ttdSessionIdAtom, ttdGenerationAtom } from "./TTDContext";
+import { ttdSessionIdAtom, chatHistoryAtom } from "./TTDContext";
 
 import type { ChatMessageType } from "../Chat";
 
@@ -17,8 +15,6 @@ export interface SavedChat {
   sessionId: string;
   messages: ChatMessageType[];
   currentPrompt: string;
-  generatedResponse: string | null;
-  validMermaidContent: string | null;
   timestamp: number;
 }
 
@@ -66,7 +62,6 @@ export const savedChatsAtom = atom<SavedChats>(loadChatsFromStorage());
 export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
   const [chatHistory] = useAtom(chatHistoryAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
-  const [ttdGeneration] = useAtom(ttdGenerationAtom);
   const [savedChats, setSavedChats] = useAtom(savedChatsAtom);
 
   const lastMessageInHistory =
@@ -114,8 +109,6 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
               : new Date(msg.timestamp),
         })),
       currentPrompt: chatHistory.currentPrompt,
-      generatedResponse: ttdGeneration?.generatedResponse || null,
-      validMermaidContent: ttdGeneration?.validMermaidContent || null,
       timestamp: messagesChanged
         ? Date.now()
         : existingChat?.timestamp ?? Date.now(),
@@ -137,7 +130,11 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
       saveCurrentChat();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [lastMessageInHistory?.id, lastMessageInHistory?.isGenerating]);
+  }, [
+    chatHistory.messages?.length,
+    lastMessageInHistory?.id,
+    lastMessageInHistory?.isGenerating,
+  ]);
 
   const deleteChat = (chatId: string): SavedChats => {
     const updatedChats = savedChats.filter((chat) => chat.id !== chatId);

@@ -1,15 +1,17 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 import { useAtom } from "../../../editor-jotai";
 
-import { errorAtom, ttdGenerationAtom } from "../TTDContext";
+import { chatHistoryAtom, errorAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 
 import type { BinaryFiles } from "../../../types";
 import type { MermaidToExcalidrawLibProps } from "../common";
+import { ChatMessage } from "../../Chat/types";
+import { updateAssistantContent } from "../utils/chat";
 
 const FAST_THROTTLE_DELAY = 300;
 const SLOW_THROTTLE_DELAY = 3000;
@@ -25,22 +27,33 @@ interface ThrottledFunction {
 interface UseMermaidRendererProps {
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
   canvasRef: React.RefObject<HTMLDivElement | null>;
-  data: React.MutableRefObject<{
-    elements: readonly NonDeletedExcalidrawElement[];
-    files: BinaryFiles | null;
-  }>;
 }
 
 export const useMermaidRenderer = ({
   mermaidToExcalidrawLib,
   canvasRef,
-  data,
 }: UseMermaidRendererProps) => {
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const [, setError] = useAtom(errorAtom);
-  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
 
   const isRenderingRef = useRef(false);
   const pendingRenderContentRef = useRef<string | null>(null);
+
+  const lastAssistantMessage = useMemo(() => {
+    return chatHistory.messages.reduce(
+      (soFar: null | ChatMessage, curr) =>
+        curr.type === "assistant" ? curr : soFar,
+      null,
+    );
+  }, [chatHistory?.messages]);
+
+  const data = useRef<{
+    elements: readonly NonDeletedExcalidrawElement[];
+    files: BinaryFiles | null;
+  }>({
+    elements: [],
+    files: null,
+  });
 
   const lastRenderTimeRef = useRef(0);
   const pendingContentRef = useRef<string | null>(null);
@@ -79,11 +92,11 @@ export const useMermaidRenderer = ({
     }
 
     if (result.success) {
-      setTtdGeneration((s) => ({
-        generatedResponse: s?.generatedResponse ?? null,
-        prompt: s?.prompt ?? null,
-        validMermaidContent: mermaidDefinition,
-      }));
+      setChatHistory((prev) =>
+        updateAssistantContent(prev, {
+          validMermaidContent: mermaidDefinition,
+        }),
+      );
     }
 
     isRenderingRef.current = false;
@@ -146,6 +159,21 @@ export const useMermaidRenderer = ({
   };
 
   useEffect(() => {
+    if (lastAssistantMessage?.content) {
+      throttledRenderMermaid(lastAssistantMessage.content);
+    } else {
+      const canvasNode = canvasRef.current;
+      if (canvasNode) {
+        const parent = canvasNode.parentElement;
+        if (parent) {
+          parent.style.background = "";
+          canvasNode.replaceChildren();
+        }
+      }
+    }
+  }, [lastAssistantMessage]);
+
+  useEffect(() => {
     return () => {
       throttledRenderMermaid.cancel();
     };
@@ -153,6 +181,7 @@ export const useMermaidRenderer = ({
   }, []);
 
   return {
+    data,
     renderMermaid,
     throttledRenderMermaid,
     isRenderingRef,

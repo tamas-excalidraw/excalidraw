@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
@@ -6,10 +6,6 @@ import { useAtom } from "../../editor-jotai";
 
 import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
-
-import { chatHistoryAtom } from "../Chat/useChatAgent";
-
-import { useChatAgent } from "../Chat";
 
 import {
   convertMermaidToExcalidraw,
@@ -20,15 +16,12 @@ import {
   showPreviewAtom,
   errorAtom,
   ttdSessionIdAtom,
-  ttdGenerationAtom,
   rateLimitsAtom,
-  ttdCanvasRefAtom,
-  ttdDataAtom,
+  chatHistoryAtom,
 } from "./TTDContext";
 
 import { useTTDChatStorage } from "./useTTDChatStorage";
 import { useMermaidRenderer } from "./hooks/useMermaidRenderer";
-import { useChatMessages } from "./hooks/useChatMessages";
 import { useTextGeneration } from "./hooks/useTextGeneration";
 import { useChatManagement } from "./hooks/useChatManagement";
 import { TTDChatPanel } from "./components/TTDChatPanel";
@@ -39,6 +32,7 @@ import type { MermaidToExcalidrawLibProps } from "./common";
 import type { ChatMessageType } from "../Chat";
 import type { BinaryFiles } from "../../types";
 import type { TTDPayload, OnTestSubmitRetValue } from "./types";
+import { addMessages, getLastAssistantMessage } from "./utils/chat";
 
 export type { OnTestSubmitRetValue, TTDPayload };
 
@@ -54,49 +48,25 @@ const TextToDiagramContent = ({
   const app = useApp();
   const setAppState = useExcalidrawSetAppState();
 
+  const canvasRef = useRef<HTMLDivElement | null>(null);
   const [showPreview, setShowPreview] = useAtom(showPreviewAtom);
   const [error, setError] = useAtom(errorAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
-  const [ttdGeneration] = useAtom(ttdGenerationAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
-  const [chatHistory] = useAtom(chatHistoryAtom);
-  const [canvasRef] = useAtom(ttdCanvasRefAtom);
-  const [data] = useAtom(ttdDataAtom);
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
-  const { updateAssistantContent } = useChatAgent();
   const { savedChats } = useTTDChatStorage();
 
-  const {
-    renderMermaid,
-    throttledRenderMermaid,
-    isRenderingRef,
-    resetThrottleState,
-  } = useMermaidRenderer({
-    mermaidToExcalidrawLib,
+  const lastAssistantMessage = getLastAssistantMessage(chatHistory);
+
+  const { data } = useMermaidRenderer({
     canvasRef,
-    data,
+    mermaidToExcalidrawLib,
   });
 
-  const {
-    addMessage,
-    updateLastMessage,
-    handleDeleteMessage,
-    removeLastErrorMessage,
-    handlePromptChange,
-    getMessagesForApi,
-  } = useChatMessages({ renderMermaid });
-
-  const { onGenerate, handleAbort, isGenerating, accumulatedContentRef } =
-    useTextGeneration({
-      getMessagesForApi,
-      addMessage,
-      updateLastMessage,
-      removeLastErrorMessage,
-      renderMermaid,
-      throttledRenderMermaid,
-      resetThrottleState,
-      onTextSubmit,
-    });
+  const { onGenerate, handleAbort, isGenerating } = useTextGeneration({
+    onTextSubmit,
+  });
 
   const {
     isMenuOpen,
@@ -106,46 +76,15 @@ const TextToDiagramContent = ({
     handleMenuToggle,
     handleMenuClose,
   } = useChatManagement({
-    accumulatedContentRef,
-    renderMermaid,
     handleAbort,
     canvasRef,
-    mermaidToExcalidrawLib,
   });
 
   useEffect(() => {
-    if (
-      ttdGeneration?.validMermaidContent ||
-      ttdGeneration?.generatedResponse
-    ) {
+    if (lastAssistantMessage?.validMermaidContent && !showPreview) {
       setShowPreview(true);
     }
-  }, [
-    ttdGeneration?.validMermaidContent,
-    ttdGeneration?.generatedResponse,
-    setShowPreview,
-  ]);
-
-  useEffect(() => {
-    if (
-      mermaidToExcalidrawLib.loaded &&
-      !isGenerating &&
-      !isRenderingRef.current
-    ) {
-      const contentToRender =
-        ttdGeneration?.validMermaidContent || ttdGeneration?.generatedResponse;
-      if (contentToRender) {
-        renderMermaid(contentToRender);
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    mermaidToExcalidrawLib.loaded,
-    isGenerating,
-    ttdGeneration?.validMermaidContent,
-    ttdGeneration?.generatedResponse,
-    isRenderingRef,
-  ]);
+  }, [lastAssistantMessage?.validMermaidContent, setShowPreview]);
 
   useEffect(() => {
     if (rateLimits?.rateLimitRemaining === 0) {
@@ -156,13 +95,17 @@ const TextToDiagramContent = ({
       );
 
       if (!hasRateLimitMessage) {
-        addMessage({
-          type: "system",
-          content: t("chat.rateLimit.message"),
-        });
+        setChatHistory(
+          addMessages(chatHistory, [
+            {
+              type: "system",
+              content: t("chat.rateLimit.message"),
+            },
+          ]),
+        );
       }
     }
-  }, [rateLimits?.rateLimitRemaining, chatHistory.messages, addMessage]);
+  }, [rateLimits?.rateLimitRemaining, chatHistory.messages]);
 
   // TODO:: just for testing
   const onReplay = async () => {
@@ -170,30 +113,22 @@ const TextToDiagramContent = ({
       return;
     }
 
-    accumulatedContentRef.current = "";
-    resetThrottleState();
     setShowPreview(true);
 
-    updateLastMessage({ content: "", isGenerating: true }, "assistant");
+    // updateLastMessage({ content: "", isGenerating: true }, "assistant");
 
     for (const chunk of mockChunks) {
-      updateAssistantContent(chunk);
-      accumulatedContentRef.current += chunk;
-      const content = accumulatedContentRef.current;
-
-      throttledRenderMermaid(content);
-
+      //updateAssistantContent(chunk);
       const delay = Math.floor(Math.random() * 5) + 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    throttledRenderMermaid.flush();
-    updateLastMessage({ isGenerating: false }, "assistant");
+    // updateLastMessage({ isGenerating: false }, "assistant");
   };
 
   const onViewAsMermaid = () => {
-    if (typeof ttdGeneration?.generatedResponse === "string") {
-      saveMermaidDataToStorage(ttdGeneration.generatedResponse);
+    if (typeof lastAssistantMessage?.content === "string") {
+      saveMermaidDataToStorage(lastAssistantMessage.content);
       setAppState({
         openDialog: { name: "ttd", tab: "mermaid" },
       });
@@ -242,8 +177,7 @@ const TextToDiagramContent = ({
   };
 
   const handleAiRepairClick = async (message: ChatMessageType) => {
-    const mermaidContent =
-      ttdGeneration?.generatedResponse || message.content || "";
+    const mermaidContent = message.content || "";
     const errorMessage = message.error || "";
 
     if (!mermaidContent) {
@@ -257,6 +191,29 @@ const TextToDiagramContent = ({
 
   const handleInsertToEditor = () => {
     insertToEditor({ app, data });
+  };
+
+  const handleDeleteMessage = (messageId: string) => {
+    const assistantMessageIndex = chatHistory.messages.findIndex(
+      (msg) => msg.id === messageId && msg.type === "assistant",
+    );
+
+    const remainingMessages = chatHistory.messages.slice(
+      0,
+      assistantMessageIndex - 1,
+    );
+
+    setChatHistory({
+      ...chatHistory,
+      messages: remainingMessages,
+    });
+  };
+
+  const handlePromptChange = (newPrompt: string) => {
+    setChatHistory((prev) => ({
+      ...prev,
+      currentPrompt: newPrompt,
+    }));
   };
 
   return (
@@ -273,7 +230,7 @@ const TextToDiagramContent = ({
         onPromptChange={handlePromptChange}
         onSendMessage={onGenerate}
         isGenerating={isGenerating}
-        generatedResponse={ttdGeneration?.generatedResponse}
+        generatedResponse={lastAssistantMessage?.content}
         isMenuOpen={isMenuOpen}
         onMenuToggle={handleMenuToggle}
         onMenuClose={handleMenuClose}
@@ -287,7 +244,7 @@ const TextToDiagramContent = ({
         onAiRepairClick={handleAiRepairClick}
         onDeleteMessage={handleDeleteMessage}
         onInsertMessage={handleInsertMessage}
-        hasValidMermaidContent={!!ttdGeneration?.validMermaidContent}
+        hasValidMermaidContent={!!lastAssistantMessage?.validMermaidContent}
         onViewAsMermaid={onViewAsMermaid}
       />
       <TTDPreviewPanel

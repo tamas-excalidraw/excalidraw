@@ -1,7 +1,5 @@
 import { useState } from "react";
 
-import { randomId } from "@excalidraw/common";
-
 import { useAtom } from "../../../editor-jotai";
 
 import { t } from "../../../i18n";
@@ -10,55 +8,29 @@ import {
   errorAtom,
   showPreviewAtom,
   rateLimitsAtom,
-  ttdGenerationAtom,
   ttdSessionIdAtom,
+  chatHistoryAtom,
 } from "../TTDContext";
-import { chatHistoryAtom } from "../../Chat/useChatAgent";
 import { useTTDChatStorage } from "../useTTDChatStorage";
 
-import type { ChatMessageType } from "../../Chat";
-import type { MermaidToExcalidrawLibProps } from "../common";
-
 import type { SavedChat } from "../useTTDChatStorage";
+import { addMessages, getLastAssistantMessage } from "../utils/chat";
 
 interface UseChatManagementProps {
-  accumulatedContentRef: React.MutableRefObject<string>;
-  renderMermaid: (content: string) => Promise<boolean>;
   handleAbort: () => void;
   canvasRef: React.RefObject<HTMLDivElement | null>;
-  mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
 }
 
-export const useChatManagement = ({
-  accumulatedContentRef,
-  renderMermaid,
-  handleAbort,
-  canvasRef,
-  mermaidToExcalidrawLib,
-}: UseChatManagementProps) => {
+export const useChatManagement = ({}: UseChatManagementProps) => {
   const [, setError] = useAtom(errorAtom);
   const [, setShowPreview] = useAtom(showPreviewAtom);
   const [, setTtdSessionId] = useAtom(ttdSessionIdAtom);
-  const [, setChatHistory] = useAtom(chatHistoryAtom);
-  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { restoreChat, deleteChat, createNewChatId } = useTTDChatStorage();
-
-  const addMessage = (message: Omit<ChatMessageType, "id" | "timestamp">) => {
-    const newMessage: ChatMessageType = {
-      ...message,
-      id: randomId(),
-      timestamp: new Date(),
-    };
-
-    setChatHistory((prev) => ({
-      ...prev,
-      messages: [...prev.messages, newMessage],
-    }));
-  };
 
   const resetChatState = () => {
     const newSessionId = createNewChatId();
@@ -67,19 +39,8 @@ export const useChatManagement = ({
       messages: [],
       currentPrompt: "",
     });
-    setTtdGeneration(null);
     setError(null);
     setShowPreview(false);
-    accumulatedContentRef.current = "";
-
-    const canvasNode = canvasRef.current;
-    if (canvasNode) {
-      const parent = canvasNode.parentElement;
-      if (parent) {
-        parent.style.background = "";
-        canvasNode.replaceChildren();
-      }
-    }
   };
 
   const applyChatToState = (chat: SavedChat) => {
@@ -94,13 +55,12 @@ export const useChatManagement = ({
       messages: restoredMessages,
       currentPrompt: "",
     });
-    setTtdGeneration({
-      generatedResponse: chat.generatedResponse,
-      prompt: chat.currentPrompt,
-      validMermaidContent: chat.validMermaidContent || null,
-    });
 
-    setShowPreview(!!chat.validMermaidContent || !!chat.generatedResponse);
+    const lastAssistantMessage = getLastAssistantMessage(chat);
+    setShowPreview(
+      !!lastAssistantMessage.validMermaidContent ||
+        !!lastAssistantMessage.content,
+    );
 
     if (rateLimits?.rateLimitRemaining === 0 && restoredMessages?.length > 0) {
       const hasRateLimitMessage = restoredMessages.some(
@@ -110,10 +70,14 @@ export const useChatManagement = ({
       );
 
       if (!hasRateLimitMessage) {
-        addMessage({
-          type: "system",
-          content: t("chat.rateLimit.message"),
-        });
+        setChatHistory(
+          addMessages(chatHistory, [
+            {
+              type: "system",
+              content: t("chat.rateLimit.message"),
+            },
+          ]),
+        );
       }
     }
   };
@@ -121,13 +85,6 @@ export const useChatManagement = ({
   const onRestoreChat = (chat: SavedChat) => {
     const restoredChat = restoreChat(chat);
     applyChatToState(restoredChat);
-
-    const contentToRender =
-      restoredChat.validMermaidContent || restoredChat.generatedResponse;
-
-    if (contentToRender) {
-      renderMermaid(contentToRender);
-    }
 
     setIsMenuOpen(false);
   };
@@ -137,18 +94,11 @@ export const useChatManagement = ({
 
     const isDeletingActiveChat = chatId === ttdSessionId;
     const updatedChats = deleteChat(chatId);
+
     if (isDeletingActiveChat) {
       if (updatedChats.length > 0) {
         const nextChat = updatedChats[0];
         applyChatToState(nextChat);
-
-        const contentToRender =
-          nextChat.validMermaidContent || nextChat.generatedResponse;
-        if (contentToRender) {
-          if (mermaidToExcalidrawLib.loaded) {
-            renderMermaid(contentToRender);
-          }
-        }
       } else {
         resetChatState();
       }
@@ -156,7 +106,6 @@ export const useChatManagement = ({
   };
 
   const handleNewChat = () => {
-    handleAbort();
     resetChatState();
     setIsMenuOpen(false);
   };

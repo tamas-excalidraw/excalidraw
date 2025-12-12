@@ -7,6 +7,7 @@ export interface ChatMessage {
   error?: string;
   errorDetails?: string;
   errorType?: "parse" | "network" | "other";
+  validMermaidContent?: string;
 }
 
 export interface ChatHistory {
