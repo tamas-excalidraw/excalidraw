@@ -5,12 +5,14 @@ import { ChatInterface } from "../../Chat";
 import { InlineIcon } from "../../InlineIcon";
 import { TTDDialogPanel } from "../TTDDialogPanel";
 
+import { useAtom } from "../../../editor-jotai";
+
+import { rateLimitsAtom } from "../TTDContext";
+
 import { ChatHistoryMenu } from "./ChatHistoryMenu";
 
 import type { ChatMessageType } from "../../Chat";
 import type { SavedChat } from "../useTTDChatStorage";
-import { useAtom } from "../../../editor-jotai";
-import { rateLimitsAtom } from "../TTDContext";
 
 interface TTDChatPanelProps {
   messages: ChatMessageType[];
@@ -65,7 +67,7 @@ export const TTDChatPanel = ({
   const [rateLimits] = useAtom(rateLimitsAtom);
 
   const getPanelActions = () => {
-    let actions = [];
+    const actions = [];
     if (rateLimits) {
       actions.push({
         label: t("chat.rateLimitRemaining", {

@@ -4,8 +4,9 @@ import { t } from "../../../i18n";
 import { HamburgerMenuIcon, TrashIcon } from "../../icons";
 import DropdownMenu from "../../dropdownMenu/DropdownMenu";
 
-import type { SavedChat } from "../useTTDChatStorage";
 import { FilledButton } from "../../FilledButton";
+
+import type { SavedChat } from "../useTTDChatStorage";
 
 interface ChatHistoryMenuProps {
   isOpen: boolean;
@@ -32,7 +33,9 @@ export const ChatHistoryMenu = ({
 }: ChatHistoryMenuProps) => {
   return (
     <div className="ttd-chat-history-menu">
-      <FilledButton onClick={onNewChat}>{t("chat.newChat")}</FilledButton>
+      <FilledButton onClick={onNewChat} disabled={disabled}>
+        {t("chat.newChat")}
+      </FilledButton>
       {savedChats.length > 0 && (
         <div className="ttd-dialog-panel__menu-wrapper">
           <DropdownMenu open={isOpen}>

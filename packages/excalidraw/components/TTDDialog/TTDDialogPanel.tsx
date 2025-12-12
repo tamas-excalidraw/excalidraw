@@ -1,9 +1,11 @@
 import clsx from "clsx";
 
+import { Fragment } from "react";
+
 import { Button } from "../Button";
 import Spinner from "../Spinner";
 
-import { Fragment, ReactNode } from "react";
+import type { ReactNode } from "react";
 
 type PanelAction = {
   label: string;

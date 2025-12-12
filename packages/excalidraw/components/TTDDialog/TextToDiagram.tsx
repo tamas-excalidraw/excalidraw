@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
@@ -22,6 +22,8 @@ import {
   ttdSessionIdAtom,
   ttdGenerationAtom,
   rateLimitsAtom,
+  ttdCanvasRefAtom,
+  ttdDataAtom,
 } from "./TTDContext";
 
 import { useTTDChatStorage } from "./useTTDChatStorage";
@@ -58,12 +60,8 @@ const TextToDiagramContent = ({
   const [ttdGeneration] = useAtom(ttdGenerationAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
   const [chatHistory] = useAtom(chatHistoryAtom);
-
-  const canvasRef = useRef<HTMLDivElement>(null);
-  const data = useRef<{
-    elements: readonly NonDeletedExcalidrawElement[];
-    files: BinaryFiles | null;
-  }>({ elements: [], files: null });
+  const [canvasRef] = useAtom(ttdCanvasRefAtom);
+  const [data] = useAtom(ttdDataAtom);
 
   const { updateAssistantContent } = useChatAgent();
   const { savedChats } = useTTDChatStorage();

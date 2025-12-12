@@ -62,7 +62,7 @@ export const useTextGeneration = ({
   const [, setError] = useAtom(errorAtom);
   const [, setShowPreview] = useAtom(showPreviewAtom);
   const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
-  const [ttdGeneration, setTtdGeneration] = useAtom(ttdGenerationAtom);
+  const [, setTtdGeneration] = useAtom(ttdGenerationAtom);
   const [, setChatHistory] = useAtom(chatHistoryAtom);
 
   const {

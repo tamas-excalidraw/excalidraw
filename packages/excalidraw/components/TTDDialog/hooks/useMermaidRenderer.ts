@@ -11,7 +11,9 @@ import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 import type { BinaryFiles } from "../../../types";
 import type { MermaidToExcalidrawLibProps } from "../common";
 
-const THROTTLE_DELAY = 3000;
+const FAST_THROTTLE_DELAY = 300;
+const SLOW_THROTTLE_DELAY = 3000;
+const RENDER_SPEED_THRESHOLD = 100;
 const PARSE_FAIL_DELAY = 100;
 
 interface ThrottledFunction {
@@ -43,6 +45,7 @@ export const useMermaidRenderer = ({
   const lastRenderTimeRef = useRef(0);
   const pendingContentRef = useRef<string | null>(null);
   const hasErrorOffsetRef = useRef(false);
+  const currentThrottleDelayRef = useRef(FAST_THROTTLE_DELAY);
 
   const renderMermaid = async (mermaidDefinition: string): Promise<boolean> => {
     if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
@@ -57,6 +60,8 @@ export const useMermaidRenderer = ({
     isRenderingRef.current = true;
     pendingRenderContentRef.current = null;
 
+    const renderStartTime = performance.now();
+
     const result = await convertMermaidToExcalidraw({
       canvasRef,
       data,
@@ -64,6 +69,14 @@ export const useMermaidRenderer = ({
       setError,
       mermaidDefinition,
     });
+
+    const renderDuration = performance.now() - renderStartTime;
+
+    if (renderDuration < RENDER_SPEED_THRESHOLD) {
+      currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
+    } else {
+      currentThrottleDelayRef.current = SLOW_THROTTLE_DELAY;
+    }
 
     if (result.success) {
       setTtdGeneration((s) => ({
@@ -80,12 +93,13 @@ export const useMermaidRenderer = ({
   const throttledRenderMermaid: ThrottledFunction = async (content: string) => {
     const now = Date.now();
     const timeSinceLastRender = now - lastRenderTimeRef.current;
+    const throttleDelay = currentThrottleDelayRef.current;
 
     if (!isValidMermaidSyntax(content)) {
       if (!hasErrorOffsetRef.current) {
         lastRenderTimeRef.current = Math.max(
           lastRenderTimeRef.current,
-          now - THROTTLE_DELAY + PARSE_FAIL_DELAY,
+          now - throttleDelay + PARSE_FAIL_DELAY,
         );
         hasErrorOffsetRef.current = true;
       }
@@ -95,7 +109,7 @@ export const useMermaidRenderer = ({
 
     hasErrorOffsetRef.current = false;
 
-    if (timeSinceLastRender < THROTTLE_DELAY) {
+    if (timeSinceLastRender < throttleDelay) {
       pendingContentRef.current = content;
       return;
     }
@@ -106,7 +120,7 @@ export const useMermaidRenderer = ({
 
     if (!success) {
       lastRenderTimeRef.current =
-        lastRenderTimeRef.current - THROTTLE_DELAY + PARSE_FAIL_DELAY;
+        lastRenderTimeRef.current - throttleDelay + PARSE_FAIL_DELAY;
       hasErrorOffsetRef.current = true;
     }
   };
@@ -128,6 +142,7 @@ export const useMermaidRenderer = ({
     lastRenderTimeRef.current = 0;
     pendingContentRef.current = null;
     hasErrorOffsetRef.current = false;
+    currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
   };
 
   useEffect(() => {

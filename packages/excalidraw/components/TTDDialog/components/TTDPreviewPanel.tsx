@@ -2,7 +2,6 @@ import { t } from "../../../i18n";
 import { ArrowRightIcon } from "../../icons";
 import { TTDDialogPanel } from "../TTDDialogPanel";
 import { TTDDialogOutput } from "../TTDDialogOutput";
-import { useAtom } from "../../../editor-jotai";
 
 interface TTDPreviewPanelProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
