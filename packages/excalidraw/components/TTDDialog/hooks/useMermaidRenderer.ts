@@ -160,7 +160,14 @@ export const useMermaidRenderer = ({
 
   useEffect(() => {
     if (lastAssistantMessage?.content) {
-      throttledRenderMermaid(lastAssistantMessage.content);
+      if (lastAssistantMessage?.isGenerating) {
+        throttledRenderMermaid(lastAssistantMessage.content);
+      } else {
+        renderMermaid(
+          lastAssistantMessage?.validMermaidContent ??
+            lastAssistantMessage?.content,
+        );
+      }
     } else {
       const canvasNode = canvasRef.current;
       if (canvasNode) {
@@ -171,7 +178,10 @@ export const useMermaidRenderer = ({
         }
       }
     }
-  }, [lastAssistantMessage]);
+  }, [
+    lastAssistantMessage?.content,
+    lastAssistantMessage?.validMermaidContent,
+  ]);
 
   useEffect(() => {
     return () => {
