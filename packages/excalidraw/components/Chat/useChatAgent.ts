@@ -5,13 +5,20 @@ import { addMessages, updateAssistantContent } from "../TTDDialog/utils/chat";
 export const useChatAgent = () => {
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
-  const addUserAndPendingAssistant = (content: string) => {
+  const addUserMessage = (content: string) => {
     setChatHistory(
       addMessages(chatHistory, [
         {
           type: "user",
           content,
         },
+      ]),
+    );
+  };
+
+  const addAssistantMessage = () => {
+    setChatHistory(
+      addMessages(chatHistory, [
         {
           type: "assistant",
           content: "",
@@ -48,7 +55,8 @@ export const useChatAgent = () => {
   };
 
   return {
-    addUserAndPendingAssistant,
+    addUserMessage,
+    addAssistantMessage,
     setAssistantError,
     chatHistory,
     setChatHistory,

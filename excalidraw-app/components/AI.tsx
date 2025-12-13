@@ -102,7 +102,8 @@ export const AIComponents = ({
 
       <TTDDialog
         onTextSubmit={async (payload) => {
-          const { onChunk, signal, ...requestPayload } = payload;
+          const { onChunk, onStreamCreated, signal, ...requestPayload } =
+            payload;
 
           const result = await streamFetch({
             url: `${
@@ -110,6 +111,7 @@ export const AIComponents = ({
             }/v1/ai/text-to-diagram/chat-streaming`,
             payload: requestPayload,
             onChunk,
+            onStreamCreated,
             extractRateLimits: true,
             signal,
           });

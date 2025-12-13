@@ -17,12 +17,6 @@ const SLOW_THROTTLE_DELAY = 3000;
 const RENDER_SPEED_THRESHOLD = 100;
 const PARSE_FAIL_DELAY = 100;
 
-interface ThrottledFunction {
-  (content: string): Promise<void>;
-  flush: () => Promise<void>;
-  cancel: () => void;
-}
-
 interface UseMermaidRendererProps {
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
   canvasRef: React.RefObject<HTMLDivElement | null>;
@@ -43,6 +37,12 @@ export const useMermaidRenderer = ({
     () => getLastAssistantMessage(chatHistory),
     [chatHistory?.messages],
   );
+
+  // Keeping lastAssistantMesssage in ref, so I can access it in useEffect hooks
+  const lastAssistantMessageRef = useRef(lastAssistantMessage);
+  useEffect(() => {
+    lastAssistantMessageRef.current = lastAssistantMessage;
+  }, [lastAssistantMessage]);
 
   const data = useRef<{
     elements: readonly NonDeletedExcalidrawElement[];
@@ -100,7 +100,7 @@ export const useMermaidRenderer = ({
     return result.success;
   };
 
-  const throttledRenderMermaid: ThrottledFunction = async (content: string) => {
+  const throttledRenderMermaid = async (content: string) => {
     const now = Date.now();
     const timeSinceLastRender = now - lastRenderTimeRef.current;
     const throttleDelay = currentThrottleDelayRef.current;
@@ -155,6 +155,7 @@ export const useMermaidRenderer = ({
     currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
   };
 
+  // this hook is responsible for keep rendering during streaming
   useEffect(() => {
     if (lastAssistantMessage?.content) {
       if (!showPreview) {
@@ -179,6 +180,7 @@ export const useMermaidRenderer = ({
     lastAssistantMessage?.validMermaidContent,
   ]);
 
+  // make sure the last bits are rendered once the streaming is completed
   useEffect(() => {
     if (
       !lastAssistantMessage?.isGenerating &&
@@ -191,8 +193,20 @@ export const useMermaidRenderer = ({
     lastAssistantMessage?.validMermaidContent,
   ]);
 
+  // render the last message if the user navigates between the existing chats
   useEffect(() => {
-    if (!chatHistory.messages.length) {
+    const msg = lastAssistantMessageRef.current;
+    if (!msg?.content) return;
+
+    renderMermaid(
+      msg.errorType === "parse" ? msg.validMermaidContent ?? "" : msg.content,
+    );
+  }, [chatHistory?.id]);
+
+  useEffect(() => {
+    if (
+      !chatHistory.messages?.filter((msg) => msg.type === "assistant").length
+    ) {
       setShowPreview(false);
     }
   }, [chatHistory.messages, setShowPreview]);

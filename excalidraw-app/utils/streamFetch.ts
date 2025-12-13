@@ -9,6 +9,7 @@ interface StreamingOptions {
   onChunk?: (chunk: string) => void;
   extractRateLimits?: boolean;
   signal?: AbortSignal;
+  onStreamCreated?: () => void;
 }
 
 type StreamingResult = {
@@ -73,7 +74,14 @@ async function* parseSSEStream(
 export async function streamFetch(
   options: StreamingOptions,
 ): Promise<StreamingResult> {
-  const { url, payload, onChunk, extractRateLimits = true, signal } = options;
+  const {
+    url,
+    payload,
+    onChunk,
+    onStreamCreated,
+    extractRateLimits = true,
+    signal,
+  } = options;
 
   try {
     let fullResponse = "";
@@ -113,6 +121,8 @@ export async function streamFetch(
     if (!reader) {
       throw new Error("No response body");
     }
+
+    onStreamCreated?.();
 
     try {
       for await (const data of parseSSEStream(reader)) {

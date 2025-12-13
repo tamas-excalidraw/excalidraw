@@ -20,6 +20,7 @@ export type TTDPayload = {
     content: string;
   }>;
   onChunk?: (chunk: string) => void;
+  onStreamCreated?: () => void;
   signal?: AbortSignal;
 };
 

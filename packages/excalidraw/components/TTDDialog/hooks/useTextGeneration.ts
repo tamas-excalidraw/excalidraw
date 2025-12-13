@@ -12,10 +12,8 @@ import { useChatAgent } from "../../Chat";
 
 import type { TTDPayload, OnTestSubmitRetValue } from "../types";
 import {
-  addMessages,
   getLastAssistantMessage,
   getMessagesForApi,
-  removeLastErrorMessage,
   updateAssistantContent,
 } from "../utils/chat";
 
@@ -31,7 +29,8 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
   const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
-  const { addUserAndPendingAssistant, setAssistantError } = useChatAgent();
+  const { addUserMessage, addAssistantMessage, setAssistantError } =
+    useChatAgent();
 
   const streamingAbortControllerRef = useRef<AbortController | null>(null);
 
@@ -76,24 +75,16 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       return;
     }
 
-    if (!isRepairFlow) {
-      addUserAndPendingAssistant(promptWithContext);
-    } else {
-      setChatHistory((prev) =>
-        updateAssistantContent(prev, {
-          content: "",
-          error: "",
-          isGenerating: true,
-        }),
-      );
-    }
-
     if (streamingAbortControllerRef.current) {
       streamingAbortControllerRef.current.abort();
     }
 
     const abortController = new AbortController();
     streamingAbortControllerRef.current = abortController;
+
+    if (!isRepairFlow) {
+      addUserMessage(promptWithContext);
+    }
 
     try {
       trackEvent("ai", "generate", "ttd");
@@ -106,6 +97,19 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
             ...filteredMessages,
             { role: "user", content: promptWithContext },
           ],
+          onStreamCreated: () => {
+            if (!isRepairFlow) {
+              addAssistantMessage();
+            } else {
+              setChatHistory((prev) =>
+                updateAssistantContent(prev, {
+                  content: "",
+                  error: "",
+                  isGenerating: true,
+                }),
+              );
+            }
+          },
           onChunk: (chunk: string) => {
             setChatHistory((prev) => {
               const lastAssistantMessage = getLastAssistantMessage(prev);
@@ -133,23 +137,16 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
           error.message === "Aborted" ||
           abortController.signal.aborted;
 
-        // do nothing if request was aborted
-        if (isAborted) {
+        // do nothingn these cases
+        if (
+          isAborted ||
+          error.message ===
+            "Too many requests today, please try again tomorrow!"
+        ) {
           return;
         }
 
-        if (
-          error.message ===
-          "Too many requests today, please try again tomorrow!"
-        ) {
-          // removing assistant message because we display a system upsell msg here
-          setChatHistory((prev) => ({
-            ...prev,
-            messages: prev.messages.slice(0, -1),
-          }));
-        } else {
-          handleError(error as Error, "network");
-        }
+        handleError(error as Error, "network");
         return;
       }
 
