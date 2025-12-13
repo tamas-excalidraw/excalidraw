@@ -1,4 +1,5 @@
 import Spinner from "../Spinner";
+import { t } from "../../i18n";
 
 const ErrorComp = ({ error }: { error: string }) => {
   return (
@@ -6,7 +7,7 @@ const ErrorComp = ({ error }: { error: string }) => {
       data-testid="ttd-dialog-output-error"
       className="ttd-dialog-output-error"
     >
-      Error! <p>{error}</p>
+      {t("ttd.error")} <p>{error}</p>
     </div>
   );
 };
@@ -26,11 +27,15 @@ export const TTDDialogOutput = ({
     <div className="ttd-dialog-output-wrapper">
       {error && <ErrorComp error={error.message} />}
       {loaded ? (
-        <div
-          ref={canvasRef}
-          style={{ opacity: error ? "0.15" : 1 }}
-          className="ttd-dialog-output-canvas-container"
-        />
+        <div className="ttd-dialog-output-canvas-container">
+          <div
+            ref={canvasRef}
+            style={{
+              opacity: error ? "0.15" : 1,
+            }}
+            className="ttd-dialog-output-canvas-content"
+          />
+        </div>
       ) : (
         <Spinner size="2rem" />
       )}
