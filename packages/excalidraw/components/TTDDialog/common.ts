@@ -1,14 +1,12 @@
 import { DEFAULT_EXPORT_PADDING, EDITOR_LS_KEYS } from "@excalidraw/common";
 
-import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
-import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidraw/dist/interfaces";
-
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 import { EditorLocalStorage } from "../../data/EditorLocalStorage";
 import { convertToExcalidrawElements, exportToCanvas } from "../../index";
 
 import type { AppClassProperties, BinaryFiles } from "../../types";
+import { MermaidToExcalidrawLibProps } from "./types";
 
 export const resetPreview = ({
   canvasRef,
@@ -31,16 +29,6 @@ export const resetPreview = ({
   canvasNode.replaceChildren();
 };
 
-export interface MermaidToExcalidrawLibProps {
-  loaded: boolean;
-  api: Promise<{
-    parseMermaidToExcalidraw: (
-      definition: string,
-      config?: MermaidConfig,
-    ) => Promise<MermaidToExcalidrawResult>;
-  }>;
-}
-
 interface ConvertMermaidToExcalidrawFormatProps {
   canvasRef: React.RefObject<HTMLDivElement | null>;
   mermaidToExcalidrawLib: MermaidToExcalidrawLibProps;
@@ -52,7 +40,7 @@ interface ConvertMermaidToExcalidrawFormatProps {
   }>;
 }
 
-export type ConvertMermaidResult =
+type ConvertMermaidResult =
   | { success: true }
   | { success: false; error?: Error };
 

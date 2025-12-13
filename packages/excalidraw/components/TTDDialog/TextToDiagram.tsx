@@ -33,10 +33,13 @@ import {
   updateAssistantContent,
 } from "./utils/chat";
 
-import type { MermaidToExcalidrawLibProps } from "./common";
 import type { ChatMessageType } from "../Chat";
 import type { BinaryFiles } from "../../types";
-import type { TTDPayload, OnTestSubmitRetValue } from "./types";
+import type {
+  TTDPayload,
+  OnTestSubmitRetValue,
+  MermaidToExcalidrawLibProps,
+} from "./types";
 
 export type { OnTestSubmitRetValue, TTDPayload };
 

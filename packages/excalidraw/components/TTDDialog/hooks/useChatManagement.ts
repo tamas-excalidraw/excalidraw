@@ -3,9 +3,10 @@ import { useState } from "react";
 import { useAtom, useSetAtom } from "../../../editor-jotai";
 
 import { errorAtom, chatHistoryAtom } from "../TTDContext";
+
 import { useTTDChatStorage } from "../useTTDChatStorage";
 
-import type { SavedChat } from "../useTTDChatStorage";
+import type { SavedChat } from "../types";
 
 export const useChatManagement = () => {
   const setError = useSetAtom(errorAtom);

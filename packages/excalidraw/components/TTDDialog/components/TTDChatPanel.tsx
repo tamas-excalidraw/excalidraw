@@ -11,8 +11,9 @@ import { rateLimitsAtom } from "../TTDContext";
 
 import { ChatHistoryMenu } from "./ChatHistoryMenu";
 
+import type { SavedChat } from "../types";
+
 import type { ChatMessageType } from "../../Chat";
-import type { SavedChat } from "../useTTDChatStorage";
 
 interface TTDChatPanelProps {
   messages: ChatMessageType[];

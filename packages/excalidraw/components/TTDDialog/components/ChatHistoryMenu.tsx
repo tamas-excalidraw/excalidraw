@@ -6,7 +6,7 @@ import DropdownMenu from "../../dropdownMenu/DropdownMenu";
 
 import { FilledButton } from "../../FilledButton";
 
-import type { SavedChat } from "../useTTDChatStorage";
+import type { SavedChat } from "../types";
 
 interface ChatHistoryMenuProps {
   isOpen: boolean;

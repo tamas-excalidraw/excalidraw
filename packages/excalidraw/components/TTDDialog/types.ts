@@ -1,6 +1,10 @@
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
+import type { ChatMessageType } from "../Chat";
+
 import type { BinaryFiles } from "../../types";
+import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
+import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidraw/dist/interfaces";
 
 // API Types
 export type OnTestSubmitRetValue = {
@@ -32,4 +36,22 @@ export type MermaidData = {
 export interface RateLimits {
   rateLimit: number;
   rateLimitRemaining: number;
+}
+
+export interface SavedChat {
+  id: string;
+  title: string;
+  messages: ChatMessageType[];
+  currentPrompt: string;
+  timestamp: number;
+}
+
+export interface MermaidToExcalidrawLibProps {
+  loaded: boolean;
+  api: Promise<{
+    parseMermaidToExcalidraw: (
+      definition: string,
+      config?: MermaidConfig,
+    ) => Promise<MermaidToExcalidrawResult>;
+  }>;
 }

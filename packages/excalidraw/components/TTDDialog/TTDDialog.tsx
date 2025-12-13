@@ -17,8 +17,7 @@ import { TTDDialogTabTrigger } from "./TTDDialogTabTrigger";
 import { TTDDialogTab } from "./TTDDialogTab";
 
 import "./TTDDialog.scss";
-
-import type { MermaidToExcalidrawLibProps } from "./common";
+import { MermaidToExcalidrawLibProps } from "./types";
 
 export const TTDDialog = (
   props:

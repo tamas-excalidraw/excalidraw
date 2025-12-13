@@ -11,7 +11,7 @@ import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 import { getLastAssistantMessage, updateAssistantContent } from "../utils/chat";
 
 import type { BinaryFiles } from "../../../types";
-import type { MermaidToExcalidrawLibProps } from "../common";
+import type { MermaidToExcalidrawLibProps } from "../types";
 
 const FAST_THROTTLE_DELAY = 300;
 const SLOW_THROTTLE_DELAY = 3000;
@@ -60,7 +60,6 @@ export const useMermaidRenderer = ({
 
   const renderMermaid = useCallback(
     async (mermaidDefinition: string): Promise<boolean> => {
-      console.log("### render called");
       if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
         return false;
       }

@@ -5,19 +5,11 @@ import { atom, useAtom } from "../../editor-jotai";
 
 import { chatHistoryAtom } from "./TTDContext";
 
-import type { ChatMessageType } from "../Chat";
+import type { SavedChat } from "./types";
 
 const TTD_CHATS_STORAGE_KEY = "excalidraw-ttd-chats";
 
-export interface SavedChat {
-  id: string;
-  title: string;
-  messages: ChatMessageType[];
-  currentPrompt: string;
-  timestamp: number;
-}
-
-export interface UseTTDChatStorageReturn {
+interface UseTTDChatStorageReturn {
   savedChats: SavedChats;
   saveCurrentChat: () => void;
   deleteChat: (chatId: string) => SavedChats;
