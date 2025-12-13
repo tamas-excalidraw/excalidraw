@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useCallback, useEffect, useMemo, useRef } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
@@ -8,9 +8,10 @@ import { chatHistoryAtom, errorAtom, showPreviewAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 
+import { getLastAssistantMessage, updateAssistantContent } from "../utils/chat";
+
 import type { BinaryFiles } from "../../../types";
 import type { MermaidToExcalidrawLibProps } from "../common";
-import { getLastAssistantMessage, updateAssistantContent } from "../utils/chat";
 
 const FAST_THROTTLE_DELAY = 300;
 const SLOW_THROTTLE_DELAY = 3000;
@@ -35,7 +36,7 @@ export const useMermaidRenderer = ({
 
   const lastAssistantMessage = useMemo(
     () => getLastAssistantMessage(chatHistory),
-    [chatHistory?.messages],
+    [chatHistory],
   );
 
   // Keeping lastAssistantMesssage in ref, so I can access it in useEffect hooks
@@ -57,96 +58,104 @@ export const useMermaidRenderer = ({
   const hasErrorOffsetRef = useRef(false);
   const currentThrottleDelayRef = useRef(FAST_THROTTLE_DELAY);
 
-  const renderMermaid = async (mermaidDefinition: string): Promise<boolean> => {
-    if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
-      return false;
-    }
+  const renderMermaid = useCallback(
+    async (mermaidDefinition: string): Promise<boolean> => {
+      console.log("### render called");
+      if (!mermaidDefinition.trim() || !mermaidToExcalidrawLib.loaded) {
+        return false;
+      }
 
-    if (isRenderingRef.current) {
-      pendingRenderContentRef.current = mermaidDefinition;
-      return false;
-    }
+      if (isRenderingRef.current) {
+        pendingRenderContentRef.current = mermaidDefinition;
+        return false;
+      }
 
-    isRenderingRef.current = true;
-    pendingRenderContentRef.current = null;
+      isRenderingRef.current = true;
+      pendingRenderContentRef.current = null;
 
-    const renderStartTime = performance.now();
+      const renderStartTime = performance.now();
 
-    const result = await convertMermaidToExcalidraw({
-      canvasRef,
-      data,
-      mermaidToExcalidrawLib,
-      setError,
-      mermaidDefinition,
-    });
+      const result = await convertMermaidToExcalidraw({
+        canvasRef,
+        data,
+        mermaidToExcalidrawLib,
+        setError,
+        mermaidDefinition,
+      });
 
-    const renderDuration = performance.now() - renderStartTime;
+      const renderDuration = performance.now() - renderStartTime;
 
-    if (renderDuration < RENDER_SPEED_THRESHOLD) {
-      currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
-    } else {
-      currentThrottleDelayRef.current = SLOW_THROTTLE_DELAY;
-    }
+      if (renderDuration < RENDER_SPEED_THRESHOLD) {
+        currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
+      } else {
+        currentThrottleDelayRef.current = SLOW_THROTTLE_DELAY;
+      }
 
-    if (result.success) {
-      setChatHistory((prev) =>
-        updateAssistantContent(prev, {
-          validMermaidContent: mermaidDefinition,
-        }),
-      );
-    }
-
-    isRenderingRef.current = false;
-    return result.success;
-  };
-
-  const throttledRenderMermaid = async (content: string) => {
-    const now = Date.now();
-    const timeSinceLastRender = now - lastRenderTimeRef.current;
-    const throttleDelay = currentThrottleDelayRef.current;
-
-    if (!isValidMermaidSyntax(content)) {
-      if (!hasErrorOffsetRef.current) {
-        lastRenderTimeRef.current = Math.max(
-          lastRenderTimeRef.current,
-          now - throttleDelay + PARSE_FAIL_DELAY,
+      if (result.success) {
+        setChatHistory((prev) =>
+          updateAssistantContent(prev, {
+            validMermaidContent: mermaidDefinition,
+          }),
         );
+      }
+
+      isRenderingRef.current = false;
+      return result.success;
+    },
+    [canvasRef, mermaidToExcalidrawLib, setChatHistory, setError],
+  );
+
+  const throttledRenderMermaid = useMemo(() => {
+    const fn = async (content: string) => {
+      const now = Date.now();
+      const timeSinceLastRender = now - lastRenderTimeRef.current;
+      const throttleDelay = currentThrottleDelayRef.current;
+
+      if (!isValidMermaidSyntax(content)) {
+        if (!hasErrorOffsetRef.current) {
+          lastRenderTimeRef.current = Math.max(
+            lastRenderTimeRef.current,
+            now - throttleDelay + PARSE_FAIL_DELAY,
+          );
+          hasErrorOffsetRef.current = true;
+        }
+        pendingContentRef.current = content;
+        return;
+      }
+
+      hasErrorOffsetRef.current = false;
+
+      if (timeSinceLastRender < throttleDelay) {
+        pendingContentRef.current = content;
+        return;
+      }
+
+      pendingContentRef.current = null;
+      const success = await renderMermaid(content);
+      lastRenderTimeRef.current = Date.now();
+
+      if (!success) {
+        lastRenderTimeRef.current =
+          lastRenderTimeRef.current - throttleDelay + PARSE_FAIL_DELAY;
         hasErrorOffsetRef.current = true;
       }
-      pendingContentRef.current = content;
-      return;
-    }
+    };
 
-    hasErrorOffsetRef.current = false;
+    fn.flush = async () => {
+      if (pendingContentRef.current) {
+        const content = pendingContentRef.current;
+        pendingContentRef.current = null;
+        await renderMermaid(content);
+        lastRenderTimeRef.current = Date.now();
+      }
+    };
 
-    if (timeSinceLastRender < throttleDelay) {
-      pendingContentRef.current = content;
-      return;
-    }
-
-    pendingContentRef.current = null;
-    const success = await renderMermaid(content);
-    lastRenderTimeRef.current = Date.now();
-
-    if (!success) {
-      lastRenderTimeRef.current =
-        lastRenderTimeRef.current - throttleDelay + PARSE_FAIL_DELAY;
-      hasErrorOffsetRef.current = true;
-    }
-  };
-
-  throttledRenderMermaid.flush = async () => {
-    if (pendingContentRef.current) {
-      const content = pendingContentRef.current;
+    fn.cancel = () => {
       pendingContentRef.current = null;
-      await renderMermaid(content);
-      lastRenderTimeRef.current = Date.now();
-    }
-  };
+    };
 
-  throttledRenderMermaid.cancel = () => {
-    pendingContentRef.current = null;
-  };
+    return fn;
+  }, [renderMermaid]);
 
   const resetThrottleState = () => {
     lastRenderTimeRef.current = 0;
@@ -157,25 +166,12 @@ export const useMermaidRenderer = ({
 
   // this hook is responsible for keep rendering during streaming
   useEffect(() => {
-    if (lastAssistantMessage?.content) {
-      if (!showPreview) {
-        setShowPreview(true);
-      }
-
-      if (lastAssistantMessage?.isGenerating) {
-        throttledRenderMermaid(lastAssistantMessage.content);
-      }
-    } else {
-      const canvasNode = canvasRef.current;
-      if (canvasNode) {
-        const parent = canvasNode.parentElement;
-        if (parent) {
-          parent.style.background = "";
-          canvasNode.replaceChildren();
-        }
-      }
+    if (lastAssistantMessage?.content && lastAssistantMessage?.isGenerating) {
+      throttledRenderMermaid(lastAssistantMessage.content);
     }
   }, [
+    throttledRenderMermaid,
+    lastAssistantMessage?.isGenerating,
     lastAssistantMessage?.content,
     lastAssistantMessage?.validMermaidContent,
   ]);
@@ -189,6 +185,7 @@ export const useMermaidRenderer = ({
       throttledRenderMermaid.flush();
     }
   }, [
+    throttledRenderMermaid,
     lastAssistantMessage?.isGenerating,
     lastAssistantMessage?.validMermaidContent,
   ]);
@@ -196,27 +193,32 @@ export const useMermaidRenderer = ({
   // render the last message if the user navigates between the existing chats
   useEffect(() => {
     const msg = lastAssistantMessageRef.current;
-    if (!msg?.content) return;
+    if (!msg?.content) {
+      return;
+    }
 
     renderMermaid(
       msg.errorType === "parse" ? msg.validMermaidContent ?? "" : msg.content,
     );
-  }, [chatHistory?.id]);
+  }, [chatHistory?.id, renderMermaid]);
 
   useEffect(() => {
     if (
       !chatHistory.messages?.filter((msg) => msg.type === "assistant").length
     ) {
+      const canvasNode = canvasRef.current;
+      if (canvasNode) {
+        const parent = canvasNode.parentElement;
+        if (parent) {
+          parent.style.background = "";
+          canvasNode.replaceChildren();
+        }
+      }
       setShowPreview(false);
+    } else if (!showPreview) {
+      setShowPreview(true);
     }
-  }, [chatHistory.messages, setShowPreview]);
-
-  useEffect(() => {
-    return () => {
-      throttledRenderMermaid.cancel();
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [chatHistory.messages, setShowPreview, canvasRef, showPreview]);
 
   return {
     data,

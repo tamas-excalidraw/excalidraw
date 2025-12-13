@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
 import { parseMermaidToExcalidraw } from "@excalidraw/mermaid-to-excalidraw";
 import { isFiniteNumber } from "@excalidraw/math";
 
@@ -10,12 +10,13 @@ import { t } from "../../../i18n";
 import { errorAtom, rateLimitsAtom, chatHistoryAtom } from "../TTDContext";
 import { useChatAgent } from "../../Chat";
 
-import type { TTDPayload, OnTestSubmitRetValue } from "../types";
 import {
   getLastAssistantMessage,
   getMessagesForApi,
   updateAssistantContent,
 } from "../utils/chat";
+
+import type { TTDPayload, OnTestSubmitRetValue } from "../types";
 
 interface UseTextGenerationProps {
   onTextSubmit: (payload: TTDPayload) => Promise<OnTestSubmitRetValue>;

@@ -7,12 +7,7 @@ import { useTTDChatStorage } from "../useTTDChatStorage";
 
 import type { SavedChat } from "../useTTDChatStorage";
 
-interface UseChatManagementProps {
-  handleAbort: () => void;
-  canvasRef: React.RefObject<HTMLDivElement | null>;
-}
-
-export const useChatManagement = ({}: UseChatManagementProps) => {
+export const useChatManagement = () => {
   const setError = useSetAtom(errorAtom);
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -81,8 +76,6 @@ export const useChatManagement = ({}: UseChatManagementProps) => {
 
   return {
     isMenuOpen,
-    resetChatState,
-    applyChatToState,
     onRestoreChat,
     handleDeleteChat,
     handleNewChat,

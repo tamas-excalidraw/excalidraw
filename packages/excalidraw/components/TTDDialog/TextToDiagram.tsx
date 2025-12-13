@@ -27,11 +27,12 @@ import { TTDChatPanel } from "./components/TTDChatPanel";
 import { TTDPreviewPanel } from "./components/TTDPreviewPanel";
 import mockChunks from "./mock";
 
+import { addMessages, getLastAssistantMessage } from "./utils/chat";
+
 import type { MermaidToExcalidrawLibProps } from "./common";
 import type { ChatMessageType } from "../Chat";
 import type { BinaryFiles } from "../../types";
 import type { TTDPayload, OnTestSubmitRetValue } from "./types";
-import { addMessages, getLastAssistantMessage } from "./utils/chat";
 
 export type { OnTestSubmitRetValue, TTDPayload };
 
@@ -73,10 +74,7 @@ const TextToDiagramContent = ({
     handleNewChat,
     handleMenuToggle,
     handleMenuClose,
-  } = useChatManagement({
-    handleAbort,
-    canvasRef,
-  });
+  } = useChatManagement();
 
   useEffect(() => {
     if (rateLimits?.rateLimitRemaining === 0) {
@@ -97,7 +95,12 @@ const TextToDiagramContent = ({
         );
       }
     }
-  }, [rateLimits?.rateLimitRemaining, chatHistory.messages]);
+  }, [
+    rateLimits?.rateLimitRemaining,
+    chatHistory.messages,
+    chatHistory,
+    setChatHistory,
+  ]);
 
   // TODO:: just for testing
   const onReplay = async () => {

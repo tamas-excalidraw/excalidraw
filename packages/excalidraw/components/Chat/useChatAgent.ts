@@ -6,8 +6,8 @@ export const useChatAgent = () => {
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
   const addUserMessage = (content: string) => {
-    setChatHistory(
-      addMessages(chatHistory, [
+    setChatHistory((prev) =>
+      addMessages(prev, [
         {
           type: "user",
           content,
@@ -17,8 +17,8 @@ export const useChatAgent = () => {
   };
 
   const addAssistantMessage = () => {
-    setChatHistory(
-      addMessages(chatHistory, [
+    setChatHistory((prev) =>
+      addMessages(prev, [
         {
           type: "assistant",
           content: "",
