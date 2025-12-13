@@ -27,7 +27,11 @@ import { TTDChatPanel } from "./components/TTDChatPanel";
 import { TTDPreviewPanel } from "./components/TTDPreviewPanel";
 import mockChunks from "./mock";
 
-import { addMessages, getLastAssistantMessage } from "./utils/chat";
+import {
+  addMessages,
+  getLastAssistantMessage,
+  updateAssistantContent,
+} from "./utils/chat";
 
 import type { MermaidToExcalidrawLibProps } from "./common";
 import type { ChatMessageType } from "../Chat";
@@ -104,21 +108,28 @@ const TextToDiagramContent = ({
 
   // TODO:: just for testing
   const onReplay = async () => {
-    // if (isGenerating || mockChunks.length === 0) {
-    //   return;
-    // }
-
-    //setShowPreview(true);
-
-    // updateLastMessage({ content: "", isGenerating: true }, "assistant");
-
+    setChatHistory((prev) => {
+      return updateAssistantContent(prev, {
+        isGenerating: true,
+        content: "",
+      });
+    });
     for (const chunk of mockChunks) {
-      //updateAssistantContent(chunk);
+      setChatHistory((prev) => {
+        const lastAssistantMessage = getLastAssistantMessage(prev);
+        return updateAssistantContent(prev, {
+          content: lastAssistantMessage.content + chunk,
+        });
+      });
       const delay = Math.floor(Math.random() * 5) + 1;
       await new Promise((resolve) => setTimeout(resolve, delay));
     }
 
-    // updateLastMessage({ isGenerating: false }, "assistant");
+    setChatHistory((prev) =>
+      updateAssistantContent(prev, {
+        isGenerating: false,
+      }),
+    );
   };
 
   const onViewAsMermaid = () => {
