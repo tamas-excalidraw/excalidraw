@@ -148,6 +148,7 @@ export const TTDChatPanel = ({
         onAiRepairClick={onAiRepairClick}
         onDeleteMessage={onDeleteMessage}
         onInsertMessage={onInsertMessage}
+        rateLimits={rateLimits}
         placeholder={{
           title: t("chat.placeholder.title"),
           description: t("chat.placeholder.description"),
