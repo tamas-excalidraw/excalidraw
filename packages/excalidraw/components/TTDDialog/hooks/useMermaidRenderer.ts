@@ -156,12 +156,12 @@ export const useMermaidRenderer = ({
     return fn;
   }, [renderMermaid]);
 
-  const resetThrottleState = () => {
+  const resetThrottleState = useCallback(() => {
     lastRenderTimeRef.current = 0;
     pendingContentRef.current = null;
     hasErrorOffsetRef.current = false;
     currentThrottleDelayRef.current = FAST_THROTTLE_DELAY;
-  };
+  }, []);
 
   // this hook is responsible for keep rendering during streaming
   useEffect(() => {
@@ -182,6 +182,7 @@ export const useMermaidRenderer = ({
       lastAssistantMessage?.validMermaidContent
     ) {
       throttledRenderMermaid.flush();
+      resetThrottleState();
     }
   }, [
     throttledRenderMermaid,
@@ -221,9 +222,5 @@ export const useMermaidRenderer = ({
 
   return {
     data,
-    renderMermaid,
-    throttledRenderMermaid,
-    isRenderingRef,
-    resetThrottleState,
   };
 };
