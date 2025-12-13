@@ -6,15 +6,7 @@ import type { ChatHistory } from "../Chat";
 
 import type { RateLimits } from "./types";
 
-type TTDGeneration = {
-  generatedResponse: string | null;
-  prompt: string | null;
-  validMermaidContent: string | null;
-} | null;
-
 export const rateLimitsAtom = atom<RateLimits | null>(null);
-
-export const ttdGenerationAtom = atom<TTDGeneration>(null);
 
 export const showPreviewAtom = atom<boolean>(false);
 
