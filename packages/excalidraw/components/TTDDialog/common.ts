@@ -5,8 +5,9 @@ import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 import { EditorLocalStorage } from "../../data/EditorLocalStorage";
 import { convertToExcalidrawElements, exportToCanvas } from "../../index";
 
+import type { MermaidToExcalidrawLibProps } from "./types";
+
 import type { AppClassProperties, BinaryFiles } from "../../types";
-import { MermaidToExcalidrawLibProps } from "./types";
 
 export const resetPreview = ({
   canvasRef,

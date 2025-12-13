@@ -1,10 +1,12 @@
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
+import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
+
+import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidraw/dist/interfaces";
+
 import type { ChatMessageType } from "../Chat";
 
 import type { BinaryFiles } from "../../types";
-import type { MermaidConfig } from "@excalidraw/mermaid-to-excalidraw";
-import type { MermaidToExcalidrawResult } from "@excalidraw/mermaid-to-excalidraw/dist/interfaces";
 
 // API Types
 export type OnTestSubmitRetValue = {
