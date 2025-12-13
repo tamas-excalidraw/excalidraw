@@ -32,7 +32,6 @@ export const useMermaidRenderer = ({
 
   const [showPreview, setShowPreview] = useAtom(showPreviewAtom);
   const isRenderingRef = useRef(false);
-  const pendingRenderContentRef = useRef<string | null>(null);
 
   const lastAssistantMessage = useMemo(
     () => getLastAssistantMessage(chatHistory),
@@ -65,12 +64,10 @@ export const useMermaidRenderer = ({
       }
 
       if (isRenderingRef.current) {
-        pendingRenderContentRef.current = mermaidDefinition;
         return false;
       }
 
       isRenderingRef.current = true;
-      pendingRenderContentRef.current = null;
 
       const renderStartTime = performance.now();
 
