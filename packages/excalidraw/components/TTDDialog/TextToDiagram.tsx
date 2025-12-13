@@ -62,7 +62,7 @@ const TextToDiagramContent = ({
     mermaidToExcalidrawLib,
   });
 
-  const { onGenerate, handleAbort, isGenerating } = useTextGeneration({
+  const { onGenerate, handleAbort } = useTextGeneration({
     onTextSubmit,
   });
 
@@ -101,9 +101,9 @@ const TextToDiagramContent = ({
 
   // TODO:: just for testing
   const onReplay = async () => {
-    if (isGenerating || mockChunks.length === 0) {
-      return;
-    }
+    // if (isGenerating || mockChunks.length === 0) {
+    //   return;
+    // }
 
     //setShowPreview(true);
 
@@ -221,7 +221,7 @@ const TextToDiagramContent = ({
         currentPrompt={chatHistory.currentPrompt}
         onPromptChange={handlePromptChange}
         onSendMessage={onGenerate}
-        isGenerating={isGenerating}
+        isGenerating={lastAssistantMessage?.isGenerating ?? false}
         generatedResponse={lastAssistantMessage?.content}
         isMenuOpen={isMenuOpen}
         onMenuToggle={handleMenuToggle}
@@ -246,7 +246,9 @@ const TextToDiagramContent = ({
         showPreview={showPreview}
         onInsert={handleInsertToEditor}
         onReplay={onReplay}
-        isReplayDisabled={isGenerating || mockChunks.length === 0}
+        isReplayDisabled={
+          lastAssistantMessage?.isGenerating || mockChunks.length === 0
+        }
       />
     </div>
   );

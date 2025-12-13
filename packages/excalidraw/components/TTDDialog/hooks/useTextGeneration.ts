@@ -33,14 +33,12 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
 
   const { addUserAndPendingAssistant, setAssistantError } = useChatAgent();
 
-  const [isGenerating, setIsGenerating] = useState(false);
   const streamingAbortControllerRef = useRef<AbortController | null>(null);
 
   const validatePrompt = (prompt: string): boolean => {
     if (
       prompt.length > MAX_PROMPT_LENGTH ||
       prompt.length < MIN_PROMPT_LENGTH ||
-      isGenerating ||
       rateLimits?.rateLimitRemaining === 0
     ) {
       if (prompt.length < MIN_PROMPT_LENGTH) {
@@ -61,50 +59,33 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
     return true;
   };
 
-  const handleAbortedGeneration = async () => {
-    setChatHistory(
-      updateAssistantContent(chatHistory, {
-        isGenerating: false,
-      }),
-    );
-  };
-
-  const handleError = (error: Error, errorType: "parse") => {
-    const message: string | undefined = error.message;
-
+  const handleError = (error: Error, errorType: "parse" | "network") => {
     if (errorType === "parse") {
       trackEvent("ai", "mermaid parse failed", "ttd");
-      setChatHistory(
-        updateAssistantContent(chatHistory, {
-          isGenerating: false,
-          error: error.message,
-          errorType: "parse",
-        }),
-      );
-      setError(new Error(message));
     }
+
+    setAssistantError(error.message, errorType);
+    setError(error);
   };
 
   const onGenerate = async (
     promptWithContext: string,
-    isRepairFlow: boolean = false,
+    isRepairFlow = false,
   ) => {
     if (!validatePrompt(promptWithContext)) {
       return;
     }
 
-    if (isRepairFlow) {
-      setChatHistory(
-        addMessages(chatHistory, [
-          {
-            type: "assistant",
-            content: "",
-            isGenerating: true,
-          },
-        ]),
-      );
-    } else {
+    if (!isRepairFlow) {
       addUserAndPendingAssistant(promptWithContext);
+    } else {
+      setChatHistory((prev) =>
+        updateAssistantContent(prev, {
+          content: "",
+          error: "",
+          isGenerating: true,
+        }),
+      );
     }
 
     if (streamingAbortControllerRef.current) {
@@ -152,8 +133,8 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
           error.message === "Aborted" ||
           abortController.signal.aborted;
 
+        // do nothing if request was aborted
         if (isAborted) {
-          await handleAbortedGeneration();
           return;
         }
 
@@ -161,19 +142,15 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
           error.message ===
           "Too many requests today, please try again tomorrow!"
         ) {
+          // removing assistant message because we display a system upsell msg here
           setChatHistory((prev) => ({
             ...prev,
             messages: prev.messages.slice(0, -1),
           }));
         } else {
-          setError(error);
-          setAssistantError(error.message, "network");
+          handleError(error as Error, "network");
         }
         return;
-      }
-
-      if (isRepairFlow) {
-        setChatHistory(removeLastErrorMessage(chatHistory));
       }
 
       await parseMermaidToExcalidraw(generatedResponse ?? "");
@@ -182,7 +159,6 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
     } catch (error: unknown) {
       handleError(error as Error, "parse");
     } finally {
-      setIsGenerating(false);
       streamingAbortControllerRef.current = null;
     }
   };
@@ -196,6 +172,5 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
   return {
     onGenerate,
     handleAbort,
-    isGenerating,
   };
 };

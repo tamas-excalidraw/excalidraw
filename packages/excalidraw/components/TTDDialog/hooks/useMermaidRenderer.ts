@@ -163,11 +163,6 @@ export const useMermaidRenderer = ({
 
       if (lastAssistantMessage?.isGenerating) {
         throttledRenderMermaid(lastAssistantMessage.content);
-      } else {
-        renderMermaid(
-          lastAssistantMessage?.validMermaidContent ??
-            lastAssistantMessage?.content,
-        );
       }
     } else {
       const canvasNode = canvasRef.current;

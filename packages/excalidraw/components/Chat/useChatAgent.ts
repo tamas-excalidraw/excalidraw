@@ -37,13 +37,12 @@ export const useChatAgent = () => {
         })
       : undefined;
 
-    setChatHistory(
-      updateAssistantContent(chatHistory, {
+    setChatHistory((prev) =>
+      updateAssistantContent(prev, {
         isGenerating: false,
         error: errorMessage,
         errorType,
         errorDetails: serializedErrorDetails,
-        content: errorMessage,
       }),
     );
   };
