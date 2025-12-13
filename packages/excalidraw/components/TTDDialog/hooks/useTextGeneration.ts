@@ -7,12 +7,7 @@ import { useAtom } from "../../../editor-jotai";
 import { trackEvent } from "../../../analytics";
 import { t } from "../../../i18n";
 
-import {
-  errorAtom,
-  showPreviewAtom,
-  rateLimitsAtom,
-  chatHistoryAtom,
-} from "../TTDContext";
+import { errorAtom, rateLimitsAtom, chatHistoryAtom } from "../TTDContext";
 import { useChatAgent } from "../../Chat";
 
 import type { TTDPayload, OnTestSubmitRetValue } from "../types";
@@ -33,7 +28,6 @@ const MAX_PROMPT_LENGTH = 10000;
 
 export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
   const [, setError] = useAtom(errorAtom);
-  const [, setShowPreview] = useAtom(showPreviewAtom);
   const [rateLimits, setRateLimits] = useAtom(rateLimitsAtom);
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
 
@@ -65,37 +59,6 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       return false;
     }
     return true;
-  };
-
-  const handleRateLimits = (
-    rateLimit: number | null | undefined,
-    rateLimitRemaining: number | null | undefined,
-  ) => {
-    if (isFiniteNumber(rateLimit) && isFiniteNumber(rateLimitRemaining)) {
-      const previousRemaining = rateLimits?.rateLimitRemaining ?? null;
-      setRateLimits({ rateLimit, rateLimitRemaining });
-
-      if (
-        rateLimitRemaining === 0 &&
-        previousRemaining !== null &&
-        previousRemaining > 0
-      ) {
-        setChatHistory(
-          updateAssistantContent(chatHistory, {
-            isGenerating: false,
-          }),
-        );
-
-        setChatHistory((prev) =>
-          addMessages(prev, [
-            {
-              type: "system",
-              content: t("chat.rateLimit.message"),
-            },
-          ]),
-        );
-      }
-    }
   };
 
   const handleAbortedGeneration = async () => {
@@ -144,8 +107,6 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       addUserAndPendingAssistant(promptWithContext);
     }
 
-    setShowPreview(true);
-
     if (streamingAbortControllerRef.current) {
       streamingAbortControllerRef.current.abort();
     }
@@ -181,7 +142,9 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
         }),
       );
 
-      handleRateLimits(rateLimit, rateLimitRemaining);
+      if (isFiniteNumber(rateLimit) && isFiniteNumber(rateLimitRemaining)) {
+        setRateLimits({ rateLimit, rateLimitRemaining });
+      }
 
       if (error) {
         const isAborted =
@@ -208,13 +171,6 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
         }
         return;
       }
-
-      // setChatHistory(
-      //   updateAssistantContent(chatHistory, {
-      //     isGenerating: false,
-      //     content: generatedResponse ?? "",
-      //   }),
-      // );
 
       if (isRepairFlow) {
         setChatHistory(removeLastErrorMessage(chatHistory));

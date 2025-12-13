@@ -4,14 +4,13 @@ import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
 import { useAtom } from "../../../editor-jotai";
 
-import { chatHistoryAtom, errorAtom } from "../TTDContext";
+import { chatHistoryAtom, errorAtom, showPreviewAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 
 import type { BinaryFiles } from "../../../types";
 import type { MermaidToExcalidrawLibProps } from "../common";
-import { ChatMessage } from "../../Chat/types";
-import { updateAssistantContent } from "../utils/chat";
+import { getLastAssistantMessage, updateAssistantContent } from "../utils/chat";
 
 const FAST_THROTTLE_DELAY = 300;
 const SLOW_THROTTLE_DELAY = 3000;
@@ -36,16 +35,14 @@ export const useMermaidRenderer = ({
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const [, setError] = useAtom(errorAtom);
 
+  const [showPreview, setShowPreview] = useAtom(showPreviewAtom);
   const isRenderingRef = useRef(false);
   const pendingRenderContentRef = useRef<string | null>(null);
 
-  const lastAssistantMessage = useMemo(() => {
-    return chatHistory.messages.reduce(
-      (soFar: null | ChatMessage, curr) =>
-        curr.type === "assistant" ? curr : soFar,
-      null,
-    );
-  }, [chatHistory?.messages]);
+  const lastAssistantMessage = useMemo(
+    () => getLastAssistantMessage(chatHistory),
+    [chatHistory?.messages],
+  );
 
   const data = useRef<{
     elements: readonly NonDeletedExcalidrawElement[];
@@ -160,6 +157,10 @@ export const useMermaidRenderer = ({
 
   useEffect(() => {
     if (lastAssistantMessage?.content) {
+      if (!showPreview) {
+        setShowPreview(true);
+      }
+
       if (lastAssistantMessage?.isGenerating) {
         throttledRenderMermaid(lastAssistantMessage.content);
       } else {
@@ -182,6 +183,24 @@ export const useMermaidRenderer = ({
     lastAssistantMessage?.content,
     lastAssistantMessage?.validMermaidContent,
   ]);
+
+  useEffect(() => {
+    if (
+      !lastAssistantMessage?.isGenerating &&
+      lastAssistantMessage?.validMermaidContent
+    ) {
+      throttledRenderMermaid.flush();
+    }
+  }, [
+    lastAssistantMessage?.isGenerating,
+    lastAssistantMessage?.validMermaidContent,
+  ]);
+
+  useEffect(() => {
+    if (!chatHistory.messages.length) {
+      setShowPreview(false);
+    }
+  }, [chatHistory.messages, setShowPreview]);
 
   useEffect(() => {
     return () => {

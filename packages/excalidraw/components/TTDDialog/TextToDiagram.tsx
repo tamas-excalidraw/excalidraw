@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 
 import type { NonDeletedExcalidrawElement } from "@excalidraw/element/types";
 
-import { useAtom } from "../../editor-jotai";
+import { useAtom, useAtomValue } from "../../editor-jotai";
 
 import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
@@ -13,11 +13,11 @@ import {
   saveMermaidDataToStorage,
 } from "./common";
 import {
-  showPreviewAtom,
   errorAtom,
   ttdSessionIdAtom,
   rateLimitsAtom,
   chatHistoryAtom,
+  showPreviewAtom,
 } from "./TTDContext";
 
 import { useTTDChatStorage } from "./useTTDChatStorage";
@@ -49,11 +49,11 @@ const TextToDiagramContent = ({
   const setAppState = useExcalidrawSetAppState();
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
-  const [showPreview, setShowPreview] = useAtom(showPreviewAtom);
   const [error, setError] = useAtom(errorAtom);
   const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
+  const showPreview = useAtomValue(showPreviewAtom);
 
   const { savedChats } = useTTDChatStorage();
 
@@ -79,12 +79,6 @@ const TextToDiagramContent = ({
     handleAbort,
     canvasRef,
   });
-
-  useEffect(() => {
-    if (lastAssistantMessage?.validMermaidContent && !showPreview) {
-      setShowPreview(true);
-    }
-  }, [lastAssistantMessage?.validMermaidContent, setShowPreview]);
 
   useEffect(() => {
     if (rateLimits?.rateLimitRemaining === 0) {
@@ -113,7 +107,7 @@ const TextToDiagramContent = ({
       return;
     }
 
-    setShowPreview(true);
+    //setShowPreview(true);
 
     // updateLastMessage({ content: "", isGenerating: true }, "assistant");
 
