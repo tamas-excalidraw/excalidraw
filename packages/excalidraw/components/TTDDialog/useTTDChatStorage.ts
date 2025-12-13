@@ -3,7 +3,7 @@ import { randomId } from "@excalidraw/common";
 
 import { atom, useAtom } from "../../editor-jotai";
 
-import { ttdSessionIdAtom, chatHistoryAtom } from "./TTDContext";
+import { chatHistoryAtom } from "./TTDContext";
 
 import type { ChatMessageType } from "../Chat";
 
@@ -12,7 +12,6 @@ const TTD_CHATS_STORAGE_KEY = "excalidraw-ttd-chats";
 export interface SavedChat {
   id: string;
   title: string;
-  sessionId: string;
   messages: ChatMessageType[];
   currentPrompt: string;
   timestamp: number;
@@ -61,7 +60,6 @@ export const savedChatsAtom = atom<SavedChats>(loadChatsFromStorage());
 
 export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
   const [chatHistory] = useAtom(chatHistoryAtom);
-  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [savedChats, setSavedChats] = useAtom(savedChatsAtom);
 
   const lastMessageInHistory =
@@ -83,7 +81,7 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
 
     const currentSavedChats = loadChatsFromStorage();
     const existingChat = currentSavedChats.find(
-      (chat) => chat.id === ttdSessionId,
+      (chat) => chat.id === chatHistory.id,
     );
 
     const messagesChanged =
@@ -96,9 +94,8 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
       );
 
     const chatToSave: SavedChat = {
-      id: ttdSessionId,
+      id: chatHistory.id,
       title,
-      sessionId: ttdSessionId,
       messages: chatHistory.messages
         .filter((msg) => msg.type !== "system")
         .map((msg) => ({
@@ -115,7 +112,7 @@ export const useTTDChatStorage = (): UseTTDChatStorageReturn => {
     };
 
     const updatedChats = [
-      ...currentSavedChats.filter((chat) => chat.id !== ttdSessionId),
+      ...currentSavedChats.filter((chat) => chat.id !== chatHistory.id),
       chatToSave,
     ]
       .sort((a, b) => b.timestamp - a.timestamp)

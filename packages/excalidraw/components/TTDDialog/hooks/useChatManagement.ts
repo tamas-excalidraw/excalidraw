@@ -2,7 +2,7 @@ import { useState } from "react";
 
 import { useAtom, useSetAtom } from "../../../editor-jotai";
 
-import { errorAtom, ttdSessionIdAtom, chatHistoryAtom } from "../TTDContext";
+import { errorAtom, chatHistoryAtom } from "../TTDContext";
 import { useTTDChatStorage } from "../useTTDChatStorage";
 
 import type { SavedChat } from "../useTTDChatStorage";
@@ -13,18 +13,16 @@ interface UseChatManagementProps {
 }
 
 export const useChatManagement = ({}: UseChatManagementProps) => {
-  const [, setError] = useAtom(errorAtom);
-  const [, setTtdSessionId] = useAtom(ttdSessionIdAtom);
-  const setChatHistory = useSetAtom(chatHistoryAtom);
-  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
+  const setError = useSetAtom(errorAtom);
+  const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   const { restoreChat, deleteChat, createNewChatId } = useTTDChatStorage();
 
   const resetChatState = () => {
     const newSessionId = createNewChatId();
-    setTtdSessionId(newSessionId);
     setChatHistory({
+      id: newSessionId,
       messages: [],
       currentPrompt: "",
     });
@@ -32,7 +30,6 @@ export const useChatManagement = ({}: UseChatManagementProps) => {
   };
 
   const applyChatToState = (chat: SavedChat) => {
-    setTtdSessionId(chat.sessionId);
     const restoredMessages = chat.messages.map((msg) => ({
       ...msg,
       timestamp:
@@ -40,6 +37,7 @@ export const useChatManagement = ({}: UseChatManagementProps) => {
     }));
 
     setChatHistory({
+      id: chat.id,
       messages: restoredMessages,
       currentPrompt: "",
     });
@@ -55,7 +53,7 @@ export const useChatManagement = ({}: UseChatManagementProps) => {
   const handleDeleteChat = (chatId: string, event: React.MouseEvent) => {
     event.stopPropagation();
 
-    const isDeletingActiveChat = chatId === ttdSessionId;
+    const isDeletingActiveChat = chatId === chatHistory.id;
     const updatedChats = deleteChat(chatId);
 
     if (isDeletingActiveChat) {

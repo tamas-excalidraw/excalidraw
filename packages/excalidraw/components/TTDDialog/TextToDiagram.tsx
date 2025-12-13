@@ -14,7 +14,6 @@ import {
 } from "./common";
 import {
   errorAtom,
-  ttdSessionIdAtom,
   rateLimitsAtom,
   chatHistoryAtom,
   showPreviewAtom,
@@ -50,7 +49,6 @@ const TextToDiagramContent = ({
 
   const canvasRef = useRef<HTMLDivElement | null>(null);
   const [error, setError] = useAtom(errorAtom);
-  const [ttdSessionId] = useAtom(ttdSessionIdAtom);
   const [rateLimits] = useAtom(rateLimitsAtom);
   const [chatHistory, setChatHistory] = useAtom(chatHistoryAtom);
   const showPreview = useAtomValue(showPreviewAtom);
@@ -232,7 +230,7 @@ const TextToDiagramContent = ({
         onRestoreChat={onRestoreChat}
         onDeleteChat={handleDeleteChat}
         savedChats={savedChats}
-        activeSessionId={ttdSessionId}
+        activeSessionId={chatHistory.id}
         onAbort={handleAbort}
         onMermaidTabClick={handleMermaidTabClick}
         onAiRepairClick={handleAiRepairClick}

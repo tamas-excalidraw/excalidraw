@@ -11,6 +11,7 @@ export interface ChatMessage {
 }
 
 export interface ChatHistory {
+  id: string;
   messages: ChatMessage[];
   currentPrompt: string;
 }
