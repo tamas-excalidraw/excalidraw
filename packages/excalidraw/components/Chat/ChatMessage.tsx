@@ -155,7 +155,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
           )}
         </div>
       </div>
-      {message.type === "assistant" && (
+      {message.type === "assistant" && !message.isGenerating && (
         <div className="chat-message__actions">
           {!message.error && onInsertMessage && (
             <button
