@@ -64,6 +64,12 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       trackEvent("ai", "mermaid parse failed", "ttd");
     }
 
+    if (errorType === "network") {
+      // assistant message is only added once the stream was created
+      // but if there is a network error it means the stream was never created
+      addAssistantMessage();
+    }
+
     setAssistantError(error.message, errorType);
     setError(error);
   };

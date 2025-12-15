@@ -80,7 +80,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         <div className="chat-message__body">
           {message.error ? (
             <div className="chat-message__error">
-              {message.content}
+              {message.content || message.error}
               {isMermaidError && (
                 <>
                   <p>{t("chat.errors.invalidDiagram")}</p>
