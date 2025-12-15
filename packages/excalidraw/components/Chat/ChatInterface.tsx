@@ -25,6 +25,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onAiRepairClick,
   onDeleteMessage,
   onInsertMessage,
+  onRetry,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
@@ -83,7 +84,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             </div>
           </div>
         ) : (
-          messages.map((message) => (
+          messages.map((message, index) => (
             <ChatMessage
               key={message.id}
               message={message}
@@ -91,7 +92,9 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
               onAiRepairClick={onAiRepairClick}
               onDeleteMessage={onDeleteMessage}
               onInsertMessage={onInsertMessage}
+              onRetry={onRetry}
               rateLimitRemaining={rateLimits?.rateLimitRemaining}
+              isLastMessage={index === messages.length - 1}
             />
           ))
         )}

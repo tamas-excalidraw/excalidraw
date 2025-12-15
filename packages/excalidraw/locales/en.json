@@ -643,6 +643,7 @@
     },
     "preview": "Preview",
     "insert": "Insert",
+    "retry": "Retry",
     "errors": {
       "promptTooShort": "Prompt is too short (min {{min}} characters)",
       "promptTooLong": "Prompt is too long (max {{max}} characters)",

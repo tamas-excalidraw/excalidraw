@@ -1,8 +1,14 @@
-import React from "react";
+import clsx from "clsx";
+import React, { useState, useEffect } from "react";
 
 import { t } from "../../i18n";
 import { FilledButton } from "../FilledButton";
-import { TrashIcon, mermaidLogoIcon, TableExportIcon } from "../icons";
+import {
+  TrashIcon,
+  mermaidLogoIcon,
+  TableExportIcon,
+  RetryIcon,
+} from "../icons";
 
 import type { ChatMessage as ChatMessageType } from "./types";
 
@@ -12,7 +18,9 @@ interface ChatMessageProps {
   onAiRepairClick?: (message: ChatMessageType) => void;
   onDeleteMessage?: (messageId: string) => void;
   onInsertMessage?: (message: ChatMessageType) => void;
+  onRetry?: (message: ChatMessageType) => void;
   rateLimitRemaining?: number;
+  isLastMessage?: boolean;
 }
 
 export const ChatMessage: React.FC<ChatMessageProps> = ({
@@ -21,8 +29,38 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
   onAiRepairClick,
   onDeleteMessage,
   onInsertMessage,
+  onRetry,
   rateLimitRemaining,
+  isLastMessage,
 }) => {
+  const [canRetry, setCanRetry] = useState(false);
+
+  useEffect(() => {
+    if (!message.error || !isLastMessage) {
+      return;
+    }
+
+    if (message.error && !message.lastAttemptAt) {
+      setCanRetry(true);
+      return;
+    }
+
+    const timeSinceLastAttempt = Date.now() - message.lastAttemptAt!;
+    const remainingTime = Math.max(0, 5000 - timeSinceLastAttempt);
+
+    if (remainingTime === 0) {
+      setCanRetry(true);
+      return;
+    }
+
+    setCanRetry(false);
+    const timer = setTimeout(() => {
+      setCanRetry(true);
+    }, remainingTime);
+
+    return () => clearTimeout(timer);
+  }, [message.error, message.lastAttemptAt]);
+
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
@@ -131,7 +169,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {TableExportIcon}
             </button>
           )}
-          {onMermaidTabClick && (
+          {onMermaidTabClick && message.errorType !== "network" && (
             <button
               className="chat-message__action"
               onClick={() => onMermaidTabClick(message)}
@@ -142,7 +180,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {mermaidLogoIcon}
             </button>
           )}
-          {onDeleteMessage && (
+          {onDeleteMessage && message.errorType !== "network" && (
             <button
               className="chat-message__action chat-message__action--danger"
               onClick={() => onDeleteMessage(message.id)}
@@ -151,6 +189,17 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               title={t("chat.deleteMessage")}
             >
               {TrashIcon}
+            </button>
+          )}
+          {message.error && onRetry && isLastMessage && (
+            <button
+              className={clsx("chat-message__action", { invisible: !canRetry })}
+              onClick={() => onRetry(message)}
+              type="button"
+              aria-label={t("chat.retry")}
+              title={t("chat.retry")}
+            >
+              {RetryIcon}
             </button>
           )}
         </div>

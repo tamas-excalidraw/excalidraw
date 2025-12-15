@@ -28,6 +28,14 @@ export const useChatAgent = () => {
     );
   };
 
+  const setLastRetryAttempt = () => {
+    setChatHistory((prev) =>
+      updateAssistantContent(prev, {
+        lastAttemptAt: Date.now(),
+      }),
+    );
+  };
+
   const setAssistantError = (
     errorMessage: string,
     errorType: "parse" | "network" | "other" = "other",
@@ -60,5 +68,6 @@ export const useChatAgent = () => {
     setAssistantError,
     chatHistory,
     setChatHistory,
+    setLastRetryAttempt,
   };
 };

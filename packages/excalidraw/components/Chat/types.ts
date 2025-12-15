@@ -8,6 +8,7 @@ export interface ChatMessage {
   errorDetails?: string;
   errorType?: "parse" | "network" | "other";
   validMermaidContent?: string;
+  lastAttemptAt?: number;
 }
 
 export interface ChatHistory {
@@ -37,4 +38,5 @@ export interface ChatInterfaceProps {
   onAiRepairClick?: (message: ChatMessage) => void;
   onDeleteMessage?: (messageId: string) => void;
   onInsertMessage?: (message: ChatMessage) => void;
+  onRetry?: (message: ChatMessage) => void;
 }

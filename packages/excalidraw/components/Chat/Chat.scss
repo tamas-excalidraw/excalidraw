@@ -263,6 +263,11 @@ $verticalBreakpoint: 861px;
       transition: color 0.2s ease;
       flex-shrink: 0;
 
+      &.invisible {
+        visibility: hidden;
+        pointer-events: none
+      }
+
       &:hover {
         color: var(--color-primary);
       }

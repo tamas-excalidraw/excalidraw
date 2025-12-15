@@ -33,7 +33,7 @@ import {
   updateAssistantContent,
 } from "./utils/chat";
 
-import type { ChatMessageType } from "../Chat";
+import { ChatMessageType, useChatAgent } from "../Chat";
 import type { BinaryFiles } from "../../types";
 import type {
   TTDPayload,
@@ -64,6 +64,8 @@ const TextToDiagramContent = ({
   const { savedChats } = useTTDChatStorage();
 
   const lastAssistantMessage = getLastAssistantMessage(chatHistory);
+
+  const { setLastRetryAttempt } = useChatAgent();
 
   const { data } = useMermaidRenderer({
     canvasRef,
@@ -198,6 +200,20 @@ const TextToDiagramContent = ({
     await onGenerate(repairPrompt, true);
   };
 
+  const handleRetry = async (message: ChatMessageType) => {
+    const messageIndex = chatHistory.messages.findIndex(
+      (msg) => msg.id === message.id,
+    );
+
+    if (messageIndex > 0) {
+      const previousMessage = chatHistory.messages[messageIndex - 1];
+      if (previousMessage.type === "user") {
+        setLastRetryAttempt();
+        await onGenerate(previousMessage.content, true);
+      }
+    }
+  };
+
   const handleInsertToEditor = () => {
     insertToEditor({ app, data });
   };
@@ -253,6 +269,7 @@ const TextToDiagramContent = ({
         onAiRepairClick={handleAiRepairClick}
         onDeleteMessage={handleDeleteMessage}
         onInsertMessage={handleInsertMessage}
+        onRetry={handleRetry}
         hasValidMermaidContent={!!lastAssistantMessage?.validMermaidContent}
         onViewAsMermaid={onViewAsMermaid}
       />

@@ -37,6 +37,7 @@ interface TTDChatPanelProps {
   onAiRepairClick: (message: ChatMessageType) => void;
   onDeleteMessage: (messageId: string) => void;
   onInsertMessage: (message: ChatMessageType) => void;
+  onRetry?: (message: ChatMessageType) => void;
 
   hasValidMermaidContent: boolean;
   onViewAsMermaid: () => void;
@@ -62,6 +63,7 @@ export const TTDChatPanel = ({
   onAiRepairClick,
   onDeleteMessage,
   onInsertMessage,
+  onRetry,
   hasValidMermaidContent,
   onViewAsMermaid,
 }: TTDChatPanelProps) => {
@@ -148,6 +150,7 @@ export const TTDChatPanel = ({
         onAiRepairClick={onAiRepairClick}
         onDeleteMessage={onDeleteMessage}
         onInsertMessage={onInsertMessage}
+        onRetry={onRetry}
         rateLimits={rateLimits}
         placeholder={{
           title: t("chat.placeholder.title"),
