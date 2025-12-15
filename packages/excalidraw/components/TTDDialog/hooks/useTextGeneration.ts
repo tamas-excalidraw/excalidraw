@@ -59,6 +59,20 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
     return true;
   };
 
+  const getReadableErrorMsg = (msg: string) => {
+    try {
+      const content = JSON.parse(msg);
+
+      const innerMessages = JSON.parse(content.message);
+
+      return innerMessages
+        .map((oneMsg: { message: string }) => oneMsg.message)
+        .join("\n");
+    } catch (err) {
+      return msg;
+    }
+  };
+
   const handleError = (error: Error, errorType: "parse" | "network") => {
     if (errorType === "parse") {
       trackEvent("ai", "mermaid parse failed", "ttd");
@@ -70,7 +84,9 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       addAssistantMessage();
     }
 
-    setAssistantError(error.message, errorType);
+    const msg = getReadableErrorMsg(error.message);
+
+    setAssistantError(msg, errorType);
     setError(error);
   };
 

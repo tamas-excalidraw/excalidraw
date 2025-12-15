@@ -85,12 +85,13 @@ export const getMessagesForApi = (
   }> = [];
 
   const lastUserMessage = chatHistory.messages
+    .filter((msg) => !!msg.content)
     .slice()
     .reverse()
     .find((msg) => msg.type === "user");
 
   const lastAssistantMessages = chatHistory.messages
-    .filter((msg) => msg.type === "assistant")
+    .filter((msg) => msg.type === "assistant" && !!msg.content)
     .slice(-2);
 
   if (lastUserMessage) {
