@@ -59,15 +59,15 @@ export const addMessages = (
   };
 };
 
-export const removeLastErrorMessage = (chatHistory: ChatHistory) => {
-  const lastErrorIndex = (chatHistory.messages ?? []).findIndex(
-    (msg) => msg.type === "assistant" && msg.error,
+export const removeLastAssistantMessage = (chatHistory: ChatHistory) => {
+  const lastMsgIdx = (chatHistory.messages ?? []).findIndex(
+    (msg) => msg.type === "assistant",
   );
 
-  if (lastErrorIndex !== -1) {
+  if (lastMsgIdx !== -1) {
     return {
       ...chatHistory,
-      messages: chatHistory.messages.filter((_, i) => i !== lastErrorIndex),
+      messages: chatHistory.messages.filter((_, idx) => idx !== lastMsgIdx),
     };
   }
   return chatHistory;

@@ -13,6 +13,7 @@ import { useChatAgent } from "../../Chat";
 import {
   getLastAssistantMessage,
   getMessagesForApi,
+  removeLastAssistantMessage,
   updateAssistantContent,
 } from "../utils/chat";
 
@@ -73,19 +74,9 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
     }
   };
 
-  const handleError = (
-    error: Error,
-    errorType: "parse" | "network",
-    addNewMessage?: boolean,
-  ) => {
+  const handleError = (error: Error, errorType: "parse" | "network") => {
     if (errorType === "parse") {
       trackEvent("ai", "mermaid parse failed", "ttd");
-    }
-
-    if (errorType === "network" && addNewMessage) {
-      // assistant message is only added once the stream was created
-      // but if there is a network error it means the stream was never created
-      addAssistantMessage();
     }
 
     const msg = getReadableErrorMsg(error.message);
@@ -111,12 +102,14 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
 
     if (!isRepairFlow) {
       addUserMessage(promptWithContext);
+      addAssistantMessage();
     } else {
       const lastAsisstantMessage = getLastAssistantMessage(chatHistory);
 
       if (lastAsisstantMessage?.errorType === "network") {
         setChatHistory((prev) =>
           updateAssistantContent(prev, {
+            isGenerating: true,
             error: undefined,
             errorType: undefined,
             errorDetails: undefined,
@@ -137,9 +130,7 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
             { role: "user", content: promptWithContext },
           ],
           onStreamCreated: () => {
-            if (!isRepairFlow) {
-              addAssistantMessage();
-            } else {
+            if (isRepairFlow) {
               setChatHistory((prev) =>
                 updateAssistantContent(prev, {
                   content: "",
@@ -176,16 +167,20 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
           error.message === "Aborted" ||
           abortController.signal.aborted;
 
-        // do nothingn these cases
-        if (
-          isAborted ||
-          error.message ===
-            "Too many requests today, please try again tomorrow!"
-        ) {
+        // do nothing if the request was aborted by the user
+        if (isAborted) {
           return;
         }
 
-        handleError(error as Error, "network", !isRepairFlow);
+        if (
+          error.message ===
+          "Too many requests today, please try again tomorrow!"
+        ) {
+          setChatHistory((prev) => removeLastAssistantMessage(prev));
+          return;
+        }
+
+        handleError(error as Error, "network");
         return;
       }
 
