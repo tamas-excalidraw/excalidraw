@@ -7,6 +7,8 @@ import { useAtom, useAtomValue } from "../../editor-jotai";
 import { t } from "../../i18n";
 import { useApp, useExcalidrawSetAppState } from "../App";
 
+import { useChatAgent } from "../Chat";
+
 import {
   convertMermaidToExcalidraw,
   insertToEditor,
@@ -33,7 +35,8 @@ import {
   updateAssistantContent,
 } from "./utils/chat";
 
-import { ChatMessageType, useChatAgent } from "../Chat";
+import type { ChatMessageType } from "../Chat";
+
 import type { BinaryFiles } from "../../types";
 import type {
   TTDPayload,

@@ -59,13 +59,11 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
     }, remainingTime);
 
     return () => clearTimeout(timer);
-  }, [message.error, message.lastAttemptAt]);
+  }, [message.error, message.lastAttemptAt, isLastMessage]);
 
   const formatTime = (date: Date) => {
     return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   };
-
-  const isMermaidError = message.errorType === "parse";
 
   if (message.type === "system") {
     return (
@@ -118,8 +116,9 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
         <div className="chat-message__body">
           {message.error ? (
             <div className="chat-message__error">
-              {message.content || message.error}
-              {isMermaidError && (
+              {message.content}
+              <div>{message.error}</div>
+              {message.errorType === "parse" && (
                 <>
                   <p>{t("chat.errors.invalidDiagram")}</p>
                   <div className="chat-message__error-actions">
@@ -169,7 +168,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {TableExportIcon}
             </button>
           )}
-          {onMermaidTabClick && message.errorType !== "network" && (
+          {onMermaidTabClick && message.content && (
             <button
               className="chat-message__action"
               onClick={() => onMermaidTabClick(message)}
@@ -191,7 +190,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               {TrashIcon}
             </button>
           )}
-          {message.error && onRetry && isLastMessage && (
+          {message.errorType === "network" && onRetry && isLastMessage && (
             <button
               className={clsx("chat-message__action", { invisible: !canRetry })}
               onClick={() => onRetry(message)}

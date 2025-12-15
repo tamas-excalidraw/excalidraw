@@ -182,6 +182,7 @@ export const useMermaidRenderer = ({
       resetThrottleState();
     }
   }, [
+    resetThrottleState,
     throttledRenderMermaid,
     lastAssistantMessage?.isGenerating,
     lastAssistantMessage?.validMermaidContent,
