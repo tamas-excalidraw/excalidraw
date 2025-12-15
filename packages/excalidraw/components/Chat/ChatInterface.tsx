@@ -81,6 +81,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
             <div className="chat-interface__empty-state-content">
               <h3>{placeholder.title}</h3>
               <p>{placeholder.description}</p>
+              <p>{placeholder.hint}</p>
             </div>
           </div>
         ) : (

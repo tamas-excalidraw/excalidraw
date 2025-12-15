@@ -639,7 +639,8 @@
     "viewAsMermaid": "View as Mermaid",
     "placeholder": {
       "title": "Let's design your diagram",
-      "description": "Describe the diagram you want to create, and I'll generate it for you."
+      "description": "Describe the diagram you want to create, and I'll generate it for you.",
+      "hint": "Currently we use Mermaid as a middle step, so you'll get best results if you describe a diagram, workflow, flow chart, and similar."
     },
     "preview": "Preview",
     "insert": "Insert",

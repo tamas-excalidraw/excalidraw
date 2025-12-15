@@ -1,6 +1,5 @@
 import { t } from "../../../i18n";
 import { ArrowRightIcon, HelpIconThin } from "../../icons";
-import { Tooltip } from "../../Tooltip";
 import { ChatInterface } from "../../Chat";
 import { InlineIcon } from "../../InlineIcon";
 import { TTDDialogPanel } from "../TTDDialogPanel";
@@ -109,15 +108,6 @@ export const TTDChatPanel = ({
         <div className="ttd-dialog-panel__label-wrapper">
           <div className="ttd-dialog-panel__label-group">
             <label>{t("chat.label")}</label>
-            <Tooltip label={t("chat.helpTooltip")} long>
-              <button
-                type="button"
-                aria-label={t("chat.helpAriaLabel")}
-                className="ttd-dialog-info"
-              >
-                {HelpIconThin}
-              </button>
-            </Tooltip>
           </div>
           <div className="ttd-dialog-panel__header-right">
             <ChatHistoryMenu
@@ -155,6 +145,7 @@ export const TTDChatPanel = ({
         placeholder={{
           title: t("chat.placeholder.title"),
           description: t("chat.placeholder.description"),
+          hint: t("chat.placeholder.hint"),
         }}
       />
     </TTDDialogPanel>

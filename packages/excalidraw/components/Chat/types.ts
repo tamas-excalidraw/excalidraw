@@ -32,6 +32,7 @@ export interface ChatInterfaceProps {
   placeholder: {
     title: string;
     description: string;
+    hint: string;
   };
   onAbort?: () => void;
   onMermaidTabClick?: (message: ChatMessage) => void;
