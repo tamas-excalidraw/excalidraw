@@ -15,6 +15,7 @@ import type { SavedChat } from "../types";
 import type { ChatMessageType } from "../../Chat";
 
 interface TTDChatPanelProps {
+  chatId: string;
   messages: ChatMessageType[];
   currentPrompt: string;
   onPromptChange: (prompt: string) => void;
@@ -43,6 +44,7 @@ interface TTDChatPanelProps {
 }
 
 export const TTDChatPanel = ({
+  chatId,
   messages,
   currentPrompt,
   onPromptChange,
@@ -129,6 +131,7 @@ export const TTDChatPanel = ({
       panelActions={actions}
     >
       <ChatInterface
+        chatId={chatId}
         messages={messages}
         currentPrompt={currentPrompt}
         onPromptChange={onPromptChange}

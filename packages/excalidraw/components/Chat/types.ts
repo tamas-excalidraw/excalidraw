@@ -18,6 +18,7 @@ export interface ChatHistory {
 }
 
 export interface ChatInterfaceProps {
+  chatId: string;
   messages: ChatMessage[];
   currentPrompt: string;
   onPromptChange: (prompt: string) => void;

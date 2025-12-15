@@ -13,6 +13,7 @@ import type { ChatInterfaceProps } from "./types";
 import type { FormEventHandler } from "react";
 
 export const ChatInterface: React.FC<ChatInterfaceProps> = ({
+  chatId,
   messages,
   currentPrompt,
   onPromptChange,
@@ -28,10 +29,17 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
   onRetry,
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView();
   }, [messages]);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, [chatId]);
 
   const handleInputChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const value = event.target.value;
@@ -106,6 +114,7 @@ export const ChatInterface: React.FC<ChatInterfaceProps> = ({
         <div className="chat-interface__input-outer">
           <div className="chat-interface__input-wrapper">
             <textarea
+              ref={textareaRef}
               autoFocus
               className="chat-interface__input"
               value={currentPrompt}

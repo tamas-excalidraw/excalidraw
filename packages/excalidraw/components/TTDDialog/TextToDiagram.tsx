@@ -253,6 +253,7 @@ const TextToDiagramContent = ({
       }`}
     >
       <TTDChatPanel
+        chatId={chatHistory.id}
         messages={chatHistory.messages}
         currentPrompt={chatHistory.currentPrompt}
         onPromptChange={handlePromptChange}
