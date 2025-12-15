@@ -18,6 +18,7 @@ interface ChatHistoryMenuProps {
   savedChats: SavedChat[];
   activeSessionId: string;
   disabled?: boolean;
+  isNewChatBtnVisible?: boolean;
 }
 
 export const ChatHistoryMenu = ({
@@ -27,15 +28,18 @@ export const ChatHistoryMenu = ({
   onNewChat,
   onRestoreChat,
   onDeleteChat,
+  isNewChatBtnVisible,
   savedChats,
   activeSessionId,
   disabled,
 }: ChatHistoryMenuProps) => {
   return (
     <div className="ttd-chat-history-menu">
-      <FilledButton onClick={onNewChat} disabled={disabled}>
-        {t("chat.newChat")}
-      </FilledButton>
+      {isNewChatBtnVisible && (
+        <FilledButton onClick={onNewChat} disabled={disabled}>
+          {t("chat.newChat")}
+        </FilledButton>
+      )}
       {savedChats.length > 0 && (
         <div className="ttd-dialog-panel__menu-wrapper">
           <DropdownMenu open={isOpen}>
