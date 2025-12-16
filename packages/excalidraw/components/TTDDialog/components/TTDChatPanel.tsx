@@ -39,7 +39,6 @@ interface TTDChatPanelProps {
   onInsertMessage: (message: ChatMessageType) => void;
   onRetry?: (message: ChatMessageType) => void;
 
-  hasValidMermaidContent: boolean;
   onViewAsMermaid: () => void;
 }
 
@@ -65,7 +64,6 @@ export const TTDChatPanel = ({
   onDeleteMessage,
   onInsertMessage,
   onRetry,
-  hasValidMermaidContent,
   onViewAsMermaid,
 }: TTDChatPanelProps) => {
   const [rateLimits] = useAtom(rateLimitsAtom);
@@ -80,7 +78,8 @@ export const TTDChatPanel = ({
         variant: "rateLimit" as const,
       });
     }
-    if (hasValidMermaidContent) {
+
+    if (generatedResponse) {
       actions.push({
         action: onViewAsMermaid,
         label: t("chat.viewAsMermaid"),

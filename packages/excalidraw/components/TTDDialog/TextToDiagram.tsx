@@ -274,7 +274,6 @@ const TextToDiagramContent = ({
         onDeleteMessage={handleDeleteMessage}
         onInsertMessage={handleInsertMessage}
         onRetry={handleRetry}
-        hasValidMermaidContent={!!lastAssistantMessage?.validMermaidContent}
         onViewAsMermaid={onViewAsMermaid}
       />
       {showPreview && (

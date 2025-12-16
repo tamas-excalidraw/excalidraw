@@ -87,14 +87,6 @@ export const useMermaidRenderer = ({
         currentThrottleDelayRef.current = SLOW_THROTTLE_DELAY;
       }
 
-      if (result.success) {
-        setChatHistory((prev) =>
-          updateAssistantContent(prev, {
-            validMermaidContent: mermaidDefinition,
-          }),
-        );
-      }
-
       isRenderingRef.current = false;
       return result.success;
     },
@@ -169,15 +161,11 @@ export const useMermaidRenderer = ({
     throttledRenderMermaid,
     lastAssistantMessage?.isGenerating,
     lastAssistantMessage?.content,
-    lastAssistantMessage?.validMermaidContent,
   ]);
 
   // make sure the last bits are rendered once the streaming is completed
   useEffect(() => {
-    if (
-      !lastAssistantMessage?.isGenerating &&
-      lastAssistantMessage?.validMermaidContent
-    ) {
+    if (!lastAssistantMessage?.isGenerating) {
       throttledRenderMermaid.flush();
       resetThrottleState();
     }
@@ -185,13 +173,12 @@ export const useMermaidRenderer = ({
     resetThrottleState,
     throttledRenderMermaid,
     lastAssistantMessage?.isGenerating,
-    lastAssistantMessage?.validMermaidContent,
   ]);
 
   // render the last message if the user navigates between the existing chats
   useEffect(() => {
     const msg = lastAssistantMessageRef.current;
-    if (!msg?.content) {
+    if (!msg?.content || msg.error) {
       return;
     }
 
@@ -199,9 +186,7 @@ export const useMermaidRenderer = ({
       return;
     }
 
-    renderMermaid(
-      msg.errorType === "parse" ? msg.validMermaidContent ?? "" : msg.content,
-    );
+    renderMermaid(msg.content);
   }, [chatHistory?.id, renderMermaid, showPreview]);
 
   useEffect(() => {

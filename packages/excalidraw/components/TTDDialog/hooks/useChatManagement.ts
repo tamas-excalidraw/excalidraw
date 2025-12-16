@@ -42,15 +42,9 @@ export const useChatManagement = () => {
 
     const lastAssistantMsg = getLastAssistantMessage(history);
 
-    if (!lastAssistantMsg?.error) {
-      setError(null);
-    } else if (
-      !lastAssistantMsg?.validMermaidContent &&
-      lastAssistantMsg?.error
-    ) {
-      setError(new Error(lastAssistantMsg?.error));
-    }
-
+    setError(
+      lastAssistantMsg?.error ? new Error(lastAssistantMsg?.error) : null,
+    );
     setChatHistory(history);
   };
 
