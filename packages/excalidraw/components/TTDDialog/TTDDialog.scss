@@ -16,7 +16,6 @@ $fullScreenModalBreakpoint: 600px;
   .Modal.Dialog.ttd-dialog {
     padding: 1.25rem;
 
-
     &.Dialog--fullscreen {
       margin-top: 0;
     }
@@ -246,7 +245,6 @@ $fullScreenModalBreakpoint: 600px;
     height: 400px;
     width: auto;
     max-width: 100%;
-
 
     @media screen and (max-width: $fullScreenModalBreakpoint) {
       height: 200px;
