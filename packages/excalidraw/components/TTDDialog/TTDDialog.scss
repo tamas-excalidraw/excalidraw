@@ -279,6 +279,11 @@ $fullScreenModalBreakpoint: 600px;
     flex-grow: 1;
     position: relative;
     user-select: none;
+
+    &.invisible {
+      visibility: hidden;
+      pointer-events: none;
+    }
   }
 
   .ttd-dialog-output-canvas-content {

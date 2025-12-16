@@ -1,3 +1,5 @@
+import clsx from "clsx";
+
 import Spinner from "../Spinner";
 import { t } from "../../i18n";
 import { alertTriangleIcon } from "../icons";
@@ -21,7 +23,7 @@ export const TTDDialogOutput = ({
         error ? "ttd-dialog-output-wrapper--error" : ""
       }`}
     >
-      {error ? (
+      {error && (
         <div
           key="error"
           data-testid="ttd-dialog-output-error"
@@ -39,8 +41,14 @@ export const TTDDialogOutput = ({
             </div>
           </div>
         </div>
-      ) : loaded ? (
-        <div key="canvas" className="ttd-dialog-output-canvas-container">
+      )}
+      {loaded ? (
+        <div
+          key="canvas"
+          className={clsx("ttd-dialog-output-canvas-container", {
+            invisible: !!error,
+          })}
+        >
           <div ref={canvasRef} className="ttd-dialog-output-canvas-content" />
         </div>
       ) : (
