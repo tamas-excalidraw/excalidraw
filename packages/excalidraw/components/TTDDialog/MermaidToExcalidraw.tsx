@@ -19,6 +19,7 @@ import {
   convertMermaidToExcalidraw,
   insertToEditor,
   saveMermaidDataToStorage,
+  resetPreview,
 } from "./common";
 
 import "./MermaidToExcalidraw.scss";
@@ -57,6 +58,10 @@ const MermaidToExcalidraw = ({
   useEffect(() => {
     const doRender = async () => {
       try {
+        if (!deferredText) {
+          resetPreview({ canvasRef, setError });
+          return;
+        }
         const result = await convertMermaidToExcalidraw({
           canvasRef,
           data,

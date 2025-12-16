@@ -8,7 +8,7 @@ import { chatHistoryAtom, errorAtom, showPreviewAtom } from "../TTDContext";
 import { convertMermaidToExcalidraw } from "../common";
 import { isValidMermaidSyntax } from "../utils/mermaidValidation";
 
-import { getLastAssistantMessage, updateAssistantContent } from "../utils/chat";
+import { getLastAssistantMessage } from "../utils/chat";
 
 import type { BinaryFiles } from "../../../types";
 import type { MermaidToExcalidrawLibProps } from "../types";
@@ -90,7 +90,7 @@ export const useMermaidRenderer = ({
       isRenderingRef.current = false;
       return result.success;
     },
-    [canvasRef, mermaidToExcalidrawLib, setChatHistory, setError],
+    [canvasRef, mermaidToExcalidrawLib, setError],
   );
 
   const throttledRenderMermaid = useMemo(() => {
