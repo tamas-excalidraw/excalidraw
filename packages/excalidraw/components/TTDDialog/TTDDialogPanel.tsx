@@ -7,22 +7,21 @@ import Spinner from "../Spinner";
 
 import type { ReactNode } from "react";
 
-type PanelAction = {
+export type TTDPanelAction = {
   label: string;
   action?: () => void;
   icon?: ReactNode;
   variant: "button" | "link" | "rateLimit";
+  disabled?: boolean;
 };
 
 interface TTDDialogPanelProps {
-  label: string | ReactNode;
+  label?: string | ReactNode;
   children: ReactNode;
-  panelActions?: Array<PanelAction>;
-  panelActionDisabled?: boolean;
+  panelActions?: TTDPanelAction[];
   onTextSubmitInProgess?: boolean;
   renderTopRight?: () => ReactNode;
   renderSubmitShortcut?: () => ReactNode;
-  renderBottomRight?: () => ReactNode;
   className?: string;
   panelActionJustifyContent?:
     | "flex-start"
@@ -37,21 +36,19 @@ export const TTDDialogPanel = ({
   label,
   children,
   panelActions = [],
-  panelActionDisabled = false,
   onTextSubmitInProgess,
   renderTopRight,
   renderSubmitShortcut,
-  renderBottomRight,
   className,
   panelActionJustifyContent = "flex-start",
 }: TTDDialogPanelProps) => {
-  const renderPanelAction = (panelAction: PanelAction) => {
+  const renderPanelAction = (panelAction: TTDPanelAction) => {
     if (panelAction?.variant === "link") {
       return (
         <button
           className="ttd-dialog-panel-action-link"
           onClick={panelAction.action}
-          disabled={panelActionDisabled || onTextSubmitInProgess}
+          disabled={panelAction?.disabled || onTextSubmitInProgess}
           type="button"
         >
           {panelAction.label}
@@ -69,7 +66,7 @@ export const TTDDialogPanel = ({
         <Button
           className="ttd-dialog-panel-button"
           onSelect={panelAction.action ? panelAction.action : () => {}}
-          disabled={panelActionDisabled || onTextSubmitInProgess}
+          disabled={panelAction?.disabled || onTextSubmitInProgess}
         >
           <div className={clsx({ invisible: onTextSubmitInProgess })}>
             {panelAction?.label}
@@ -89,10 +86,12 @@ export const TTDDialogPanel = ({
 
   return (
     <div className={clsx("ttd-dialog-panel", className)}>
-      <div className="ttd-dialog-panel__header">
-        {typeof label === "string" ? <label>{label}</label> : label}
-        {renderTopRight?.()}
-      </div>
+      {(label || renderTopRight) && (
+        <div className="ttd-dialog-panel__header">
+          {typeof label === "string" ? <label>{label}</label> : label}
+          {renderTopRight?.()}
+        </div>
+      )}
       {children}
       <div
         className={clsx("ttd-dialog-panel-button-container", {
@@ -107,10 +106,7 @@ export const TTDDialogPanel = ({
             {renderPanelAction(panelAction)}
           </Fragment>
         ))}
-        {!panelActionDisabled &&
-          !onTextSubmitInProgess &&
-          renderSubmitShortcut?.()}
-        {renderBottomRight?.()}
+        {!onTextSubmitInProgess && renderSubmitShortcut?.()}
       </div>
     </div>
   );

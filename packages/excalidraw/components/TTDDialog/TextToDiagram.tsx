@@ -277,17 +277,18 @@ const TextToDiagramContent = ({
         hasValidMermaidContent={!!lastAssistantMessage?.validMermaidContent}
         onViewAsMermaid={onViewAsMermaid}
       />
-      <TTDPreviewPanel
-        canvasRef={canvasRef}
-        error={error}
-        loaded={mermaidToExcalidrawLib.loaded}
-        showPreview={showPreview}
-        onInsert={handleInsertToEditor}
-        onReplay={onReplay}
-        isReplayDisabled={
-          lastAssistantMessage?.isGenerating || mockChunks.length === 0
-        }
-      />
+      {showPreview && (
+        <TTDPreviewPanel
+          canvasRef={canvasRef}
+          error={error}
+          loaded={mermaidToExcalidrawLib.loaded}
+          onInsert={handleInsertToEditor}
+          onReplay={onReplay}
+          isReplayDisabled={
+            lastAssistantMessage?.isGenerating || mockChunks.length === 0
+          }
+        />
+      )}
     </div>
   );
 };

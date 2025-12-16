@@ -3,12 +3,7 @@ import React, { useState, useEffect } from "react";
 
 import { t } from "../../i18n";
 import { FilledButton } from "../FilledButton";
-import {
-  TrashIcon,
-  mermaidLogoIcon,
-  TableExportIcon,
-  RetryIcon,
-} from "../icons";
+import { TrashIcon, codeIcon, stackPushIcon, RetryIcon } from "../icons";
 
 import type { ChatMessage as ChatMessageType } from "./types";
 
@@ -165,7 +160,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               aria-label={t("chat.insert")}
               title={t("chat.insert")}
             >
-              {TableExportIcon}
+              {stackPushIcon}
             </button>
           )}
           {onMermaidTabClick && message.content && (
@@ -176,7 +171,7 @@ export const ChatMessage: React.FC<ChatMessageProps> = ({
               aria-label={t("chat.viewAsMermaid")}
               title={t("chat.viewAsMermaid")}
             >
-              {mermaidLogoIcon}
+              {codeIcon}
             </button>
           )}
           {onDeleteMessage && message.errorType !== "network" && (

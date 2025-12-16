@@ -1,7 +1,7 @@
 import clsx from "clsx";
 
 import { t } from "../../../i18n";
-import { HamburgerMenuIcon, TrashIcon } from "../../icons";
+import { historyIcon, TrashIcon } from "../../icons";
 import DropdownMenu from "../../dropdownMenu/DropdownMenu";
 
 import { FilledButton } from "../../FilledButton";
@@ -50,7 +50,7 @@ export const ChatHistoryMenu = ({
               title={t("chat.menu")}
               aria-label={t("chat.menu")}
             >
-              {HamburgerMenuIcon}
+              {historyIcon}
             </DropdownMenu.Trigger>
             <DropdownMenu.Content
               onClickOutside={onClose}

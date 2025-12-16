@@ -117,7 +117,7 @@ const MermaidToExcalidraw = ({
         />
       </div>
       <TTDDialogPanels>
-        <TTDDialogPanel label={t("mermaid.syntax")}>
+        <TTDDialogPanel>
           <TTDDialogInput
             input={text}
             placeholder={t("mermaid.inputPlaceholder")}
@@ -128,7 +128,6 @@ const MermaidToExcalidraw = ({
           />
         </TTDDialogPanel>
         <TTDDialogPanel
-          label={t("mermaid.preview")}
           panelActions={[
             {
               action: () => {

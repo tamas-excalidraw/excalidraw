@@ -108,9 +108,7 @@ export const TTDChatPanel = ({
     <TTDDialogPanel
       label={
         <div className="ttd-dialog-panel__label-wrapper">
-          <div className="ttd-dialog-panel__label-group">
-            <label>{t("chat.label")}</label>
-          </div>
+          <div className="ttd-dialog-panel__label-group"></div>
           <div className="ttd-dialog-panel__header-right">
             <ChatHistoryMenu
               isNewChatBtnVisible={!!messages.length}
