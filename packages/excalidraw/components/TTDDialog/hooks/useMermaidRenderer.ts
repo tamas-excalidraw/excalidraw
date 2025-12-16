@@ -195,10 +195,14 @@ export const useMermaidRenderer = ({
       return;
     }
 
+    if (!showPreview) {
+      return;
+    }
+
     renderMermaid(
       msg.errorType === "parse" ? msg.validMermaidContent ?? "" : msg.content,
     );
-  }, [chatHistory?.id, renderMermaid]);
+  }, [chatHistory?.id, renderMermaid, showPreview]);
 
   useEffect(() => {
     if (
