@@ -1,5 +1,5 @@
 import { t } from "../../../i18n";
-import { ArrowRightIcon, HelpIconThin } from "../../icons";
+import { ArrowRightIcon } from "../../icons";
 import { ChatInterface } from "../../Chat";
 import { InlineIcon } from "../../InlineIcon";
 import { TTDDialogPanel } from "../TTDDialogPanel";
