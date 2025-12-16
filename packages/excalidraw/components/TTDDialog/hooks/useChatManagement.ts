@@ -7,6 +7,7 @@ import { errorAtom, chatHistoryAtom } from "../TTDContext";
 import { useTTDChatStorage } from "../useTTDChatStorage";
 
 import type { SavedChat } from "../types";
+import { getLastAssistantMessage } from "../utils/chat";
 
 export const useChatManagement = () => {
   const setError = useSetAtom(errorAtom);
@@ -32,11 +33,24 @@ export const useChatManagement = () => {
         msg.timestamp instanceof Date ? msg.timestamp : new Date(msg.timestamp),
     }));
 
-    setChatHistory({
+    const history = {
       id: chat.id,
       messages: restoredMessages,
       currentPrompt: "",
-    });
+    };
+
+    const lastAssistantMsg = getLastAssistantMessage(history);
+
+    if (!lastAssistantMsg?.error) {
+      setError(null);
+    } else if (
+      !lastAssistantMsg?.validMermaidContent &&
+      lastAssistantMsg?.error
+    ) {
+      setError(new Error(lastAssistantMsg?.error));
+    }
+
+    setChatHistory(history);
   };
 
   const onRestoreChat = (chat: SavedChat) => {

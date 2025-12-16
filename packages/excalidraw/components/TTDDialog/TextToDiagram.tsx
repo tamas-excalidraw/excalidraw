@@ -280,6 +280,7 @@ const TextToDiagramContent = ({
       {showPreview && (
         <TTDPreviewPanel
           canvasRef={canvasRef}
+          hideErrorDetails={lastAssistantMessage?.errorType === "parse"}
           error={error}
           loaded={mermaidToExcalidrawLib.loaded}
           onInsert={handleInsertToEditor}

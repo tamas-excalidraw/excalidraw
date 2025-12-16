@@ -15,6 +15,7 @@ interface TTDPreviewPanelProps {
   onInsert: () => void;
   onReplay: () => void;
   isReplayDisabled: boolean;
+  hideErrorDetails?: boolean;
 }
 
 export const TTDPreviewPanel = ({
@@ -24,6 +25,7 @@ export const TTDPreviewPanel = ({
   onInsert,
   onReplay,
   isReplayDisabled,
+  hideErrorDetails,
 }: TTDPreviewPanelProps) => {
   const actions: TTDPanelAction[] = [];
 
@@ -49,7 +51,12 @@ export const TTDPreviewPanel = ({
       panelActions={actions}
       className="ttd-dialog-preview-panel"
     >
-      <TTDDialogOutput canvasRef={canvasRef} error={error} loaded={loaded} />
+      <TTDDialogOutput
+        canvasRef={canvasRef}
+        error={error}
+        loaded={loaded}
+        hideErrorDetails={hideErrorDetails}
+      />
     </TTDDialogPanel>
   );
 };

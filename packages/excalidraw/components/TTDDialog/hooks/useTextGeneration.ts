@@ -97,6 +97,8 @@ export const useTextGeneration = ({ onTextSubmit }: UseTextGenerationProps) => {
       streamingAbortControllerRef.current.abort();
     }
 
+    setError(null);
+
     const abortController = new AbortController();
     streamingAbortControllerRef.current = abortController;
 
