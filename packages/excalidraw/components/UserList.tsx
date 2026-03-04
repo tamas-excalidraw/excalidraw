@@ -9,6 +9,7 @@ import type { MarkRequired } from "@excalidraw/common/utility-types";
 import { t } from "../i18n";
 
 import { useExcalidrawActionManager } from "./App";
+import { chevronDownIcon } from "./icons";
 import { Island } from "./Island";
 import { QuickSearch } from "./QuickSearch";
 import { ScrollableList } from "./ScrollableList";
@@ -90,6 +91,7 @@ type UserListUserObject = Pick<
   | "isInCall"
   | "isSpeaking"
   | "isMuted"
+  | "isCurrentUser"
 >;
 
 type UserListProps = {
@@ -97,6 +99,7 @@ type UserListProps = {
   mobile?: boolean;
   collaborators: Map<SocketId, UserListUserObject>;
   userToFollow: SocketId | null;
+  currentUserMenu?: React.ReactNode;
 };
 
 const collaboratorComparatorKeys = [
@@ -107,10 +110,17 @@ const collaboratorComparatorKeys = [
   "isInCall",
   "isSpeaking",
   "isMuted",
+  "isCurrentUser",
 ] as const;
 
 export const UserList = React.memo(
-  ({ className, mobile, collaborators, userToFollow }: UserListProps) => {
+  ({
+    className,
+    mobile,
+    collaborators,
+    userToFollow,
+    currentUserMenu,
+  }: UserListProps) => {
     const actionManager = useExcalidrawActionManager();
 
     const uniqueCollaboratorsMap = new Map<
@@ -174,15 +184,48 @@ export const UserList = React.memo(
       maxAvatars - 1,
     );
 
-    const firstNAvatarsJSX = firstNCollaborators.map((collaborator) =>
-      renderCollaborator({
+    const hasOverflow = uniqueCollaboratorsArray.length > maxAvatars - 1;
+
+    const firstNAvatarsJSX = firstNCollaborators.map((collaborator) => {
+      const avatarJSX = renderCollaborator({
         actionManager,
         collaborator,
         socketId: collaborator.socketId,
-        shouldWrapWithTooltip: true,
+        shouldWrapWithTooltip:
+          !collaborator.isCurrentUser || !currentUserMenu || hasOverflow,
         isBeingFollowed: collaborator.socketId === userToFollow,
-      }),
-    );
+      });
+
+      // Wrap current user's avatar in a pill with chevron + popover
+      // only when the "+N" overflow is not shown (menu goes there instead)
+      if (collaborator.isCurrentUser && currentUserMenu && !hasOverflow) {
+        return (
+          <Popover.Root key={collaborator.socketId}>
+            <Popover.Trigger asChild>
+              <div className="UserList__pill">
+                {avatarJSX}
+                <div className="UserList__pill-chevron">
+                  {chevronDownIcon}
+                </div>
+              </div>
+            </Popover.Trigger>
+            <Popover.Content
+              align="end"
+              sideOffset={10}
+              className="dropdown-menu"
+            >
+              <Popover.Close asChild>
+                <Island padding={2} className="dropdown-menu-container">
+                  {currentUserMenu}
+                </Island>
+              </Popover.Close>
+            </Popover.Content>
+          </Popover.Root>
+        );
+      }
+
+      return avatarJSX;
+    });
 
     return mobile ? (
       <div className={clsx("UserList UserList_mobile", className)}>
@@ -247,6 +290,16 @@ export const UserList = React.memo(
                         ]
                       : []}
                   </ScrollableList>
+                  {currentUserMenu && (
+                    <>
+                      <div className="UserList__more-menu-divider" />
+                      <Popover.Close asChild>
+                        <div className="dropdown-menu">
+                          {currentUserMenu}
+                        </div>
+                      </Popover.Close>
+                    </>
+                  )}
                   <Popover.Arrow
                     width={20}
                     height={10}
@@ -268,7 +321,8 @@ export const UserList = React.memo(
       prev.collaborators.size !== next.collaborators.size ||
       prev.mobile !== next.mobile ||
       prev.className !== next.className ||
-      prev.userToFollow !== next.userToFollow
+      prev.userToFollow !== next.userToFollow ||
+      prev.currentUserMenu !== next.currentUserMenu
     ) {
       return false;
     }

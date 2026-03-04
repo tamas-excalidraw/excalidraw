@@ -80,6 +80,35 @@
     white-space: nowrap;
   }
 
+  .UserList__pill {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0 0.25rem 0 0;
+    border-radius: 1.25rem;
+    background-color: var(--color-surface-low);
+    border: 1px solid var(--color-gray-20);
+    cursor: pointer;
+    pointer-events: var(--ui-pointerEvents);
+    user-select: none;
+    transition: background-color 0.15s ease;
+
+    &:hover {
+      background-color: var(--color-surface-high);
+    }
+  }
+
+  .UserList__pill-chevron {
+    display: flex;
+    align-items: center;
+    color: var(--color-gray-50);
+    transition: transform 0.15s ease;
+  }
+
+  [data-state="open"] > .UserList__pill .UserList__pill-chevron {
+    transform: rotate(180deg);
+  }
+
   .UserList__collaborator--avatar-only {
     position: relative;
     display: flex;
@@ -159,5 +188,11 @@
   .UserList__collaborators {
     top: auto;
     max-height: 50vh;
+  }
+
+  .UserList__more-menu-divider {
+    height: 1px;
+    background-color: var(--userlist-collaborators-border-color);
+    margin: 0.25rem 0;
   }
 }

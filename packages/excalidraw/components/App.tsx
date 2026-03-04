@@ -438,6 +438,7 @@ import { activeConfirmDialogAtom } from "./ActiveConfirmDialog";
 import BraveMeasureTextError from "./BraveMeasureTextError";
 import { ContextMenu, CONTEXT_MENU_SEPARATOR } from "./ContextMenu";
 import { activeEyeDropperAtom } from "./EyeDropper";
+import CanvasNotification from "./CanvasNotification/CanvasNotification";
 import FollowMode from "./FollowMode/FollowMode";
 import LayerUI from "./LayerUI";
 import { ElementCanvasButton } from "./MagicButton";
@@ -2087,6 +2088,7 @@ class App extends React.Component<AppProps, AppState> {
                           generateLinkForSelection={
                             this.props.generateLinkForSelection
                           }
+                          currentUserMenu={this.props.currentUserMenu}
                         >
                           {this.props.children}
                         </LayerUI>
@@ -2295,6 +2297,11 @@ class App extends React.Component<AppProps, AppState> {
                             height={this.state.height}
                             userToFollow={this.state.userToFollow}
                             onDisconnect={this.maybeUnfollowRemoteUser}
+                          />
+                        )}
+                        {this.props.canvasNotification && (
+                          <CanvasNotification
+                            notification={this.props.canvasNotification}
                           />
                         )}
                         {this.renderFrameNames()}
