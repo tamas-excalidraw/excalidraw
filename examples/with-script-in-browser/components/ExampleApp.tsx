@@ -112,6 +112,8 @@ export default function ExampleApp({
   const [theme, setTheme] = useState<Theme>("light");
   const [disableImageTool, setDisableImageTool] = useState(false);
   const [isCollaborating, setIsCollaborating] = useState(false);
+  const [showCanvasNotification, setShowCanvasNotification] = useState(false);
+  const [showCurrentUserMenu, setShowCurrentUserMenu] = useState(false);
   const [commentIcons, setCommentIcons] = useState<{ [id: string]: Comment }>(
     {},
   );
@@ -208,6 +210,24 @@ export default function ExampleApp({
         onPointerDown,
         onScrollChange: rerenderCommentIcons,
         validateEmbeddable: true,
+        canvasNotification: showCanvasNotification
+          ? {
+              label: "Alice is presenting",
+              color: "#a855f7",
+              textColor: "#fff",
+              borderColor: "#a855f7",
+              onDismiss: () => setShowCanvasNotification(false),
+            }
+          : null,
+        currentUserMenu: showCurrentUserMenu ? (
+          <button
+            type="button"
+            className="dropdown-menu-item dropdown-menu-item-base"
+            onClick={() => window.alert("Spotlight toggled!")}
+          >
+            <div className="dropdown-menu-item__text">Spotlight me</div>
+          </button>
+        ) : undefined,
       },
       <>
         {excalidrawAPI && (
@@ -235,9 +255,9 @@ export default function ExampleApp({
           tab="one"
           style={{
             position: "absolute",
-            left: "50%",
+            right: 0,
             transform: "translateX(-50%)",
-            bottom: "20px",
+            bottom: "15px",
             zIndex: 9999999999999999,
           }}
         >
@@ -760,8 +780,9 @@ export default function ExampleApp({
                     avatarUrl: "images/pika.jpeg",
                   });
                   collaborators.set("id4", {
-                    username: "fallback",
-                    avatarUrl: "https://example.com",
+                    username: "You (current)",
+                    avatarUrl: "images/doremon.png",
+                    isCurrentUser: true,
                   });
                   excalidrawAPI?.updateScene({ collaborators });
                 } else {
@@ -773,6 +794,24 @@ export default function ExampleApp({
               }}
             />
             Show collaborators
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showCanvasNotification}
+              onChange={() =>
+                setShowCanvasNotification(!showCanvasNotification)
+              }
+            />
+            Canvas notification
+          </label>
+          <label>
+            <input
+              type="checkbox"
+              checked={showCurrentUserMenu}
+              onChange={() => setShowCurrentUserMenu(!showCurrentUserMenu)}
+            />
+            Current user menu
           </label>
           <div>
             <button onClick={onCopy.bind(null, "png")}>
